@@ -1,16 +1,38 @@
-# React + Vite
+# 💻 Assignment Pay - Frontend Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the client-side single page application (SPA) for **Assignment Pay**, built with **React 19** and **Vite**.
 
-Currently, two official plugins are available:
+For comprehensive documentation covering the entire system, backend APIs, Stripe setup, and architecture, please refer to the [Root README.md](../README.md).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## 🚀 Quick Start
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 1. Install Dependencies
+```bash
+npm install
+```
 
-## Expanding the ESLint configuration
+### 2. Environment Configuration
+Create a `.env` file in this directory (refer to [`.env.example`](.env.example)):
+```env
+VITE_API_URL=http://localhost:8000
+VITE_ADMIN_EMAIL=satyam@gmail.com
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 3. Run Development Server
+```bash
+npm run dev
+```
+The app will run locally at [http://localhost:5173](http://localhost:5173).
+
+---
+
+## 📁 Key Components
+
+- **`src/App.jsx`**: Top-level application layout, auth state observer with `localStorage` persistence, and tab switcher.
+- **`src/components/AuthPage.jsx`**: User sign-in and registration forms with one-click admin autofill.
+- **`src/components/Navbar.jsx`**: Header navigation, active tab highlight, admin badge, and logout trigger.
+- **`src/components/PayPage.jsx`**: Quick preset payment buttons (\$20, \$50, \$60, \$100) and custom payment submission.
+- **`src/components/MyPaymentsPage.jsx`**: Tabular personal transaction history with status badges and refresh control.
+- **`src/components/AdminPanel.jsx`**: Executive dashboard with total revenue calculation, total transaction count, and instant multi-column search/filtering.
