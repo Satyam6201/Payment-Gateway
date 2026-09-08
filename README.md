@@ -19,6 +19,7 @@ A full-stack modern payment processing, transaction history tracking, and admini
 - [Key Features](#-key-features)
 - [Technology Stack](#-technology-stack)
 - [Project Directory Structure](#-project-directory-structure)
+- [Database Schema & Data Models](#-database-schema--data-models-mysql)
 - [Prerequisites](#-prerequisites)
 - [Environment Variables](#-environment-variables)
 - [Getting Started & Installation](#-getting-started--installation)
@@ -200,22 +201,72 @@ Payment-Gateway/
     │   │   ├── react.svg           # React icon
     │   │   └── vite.svg            # Vite icon
     │   ├── components/
+    │   │   ├── AdminPanel.css      # Styles for admin dashboard and KPI cards
     │   │   ├── AdminPanel.jsx      # Admin analytics, total revenue, filterable table
+    │   │   ├── AuthPage.css        # Styles for auth portal and glowing background orbs
     │   │   ├── AuthPage.jsx        # Login / Register forms with admin autofill
+    │   │   ├── icons.jsx           # Vector SVG icons suite with animations
+    │   │   ├── MyPaymentsPage.css  # Styles for payment history and interactive table
     │   │   ├── MyPaymentsPage.jsx  # User's personal order history table
+    │   │   ├── Navbar.css          # Styles for sticky navbar and user profile
     │   │   ├── Navbar.jsx          # Top navigation bar with active tab & user profile
+    │   │   ├── PayPage.css         # Styles for payment studio, presets and receipt modal
     │   │   └── PayPage.jsx         # Payment portal with quick presets & custom amount
     │   ├── api.js                  # Frontend configuration for API URL & admin email
-    │   ├── App.css                 # Complete UI style system & responsiveness
+    │   ├── App.css                 # Root application shell & modal backdrop styling
     │   ├── App.jsx                 # Root component with auth guard & tab routing
-    │   ├── index.css               # Base CSS resets
+    │   ├── index.css               # Design tokens, resets, status pills & keyframes
     │   └── main.jsx                # React DOM root mounting
     ├── .env.example                # Frontend environment variable template
     ├── eslint.config.js            # ESLint rules configuration
     ├── index.html                  # HTML entry point
     ├── package.json                # Frontend dependencies and Vite scripts
+    ├── README.md                   # Frontend architecture & component documentation
     └── vite.config.js              # Vite bundler configuration
 ```
+
+---
+
+## 🗄️ Database Schema & Data Models (MySQL)
+
+The backend utilizes **MySQL** with **Sequelize** ORM, featuring automatically synchronized tables (`sync({ alter: true })`) and direct DDL available in [`Backend/schema.sql`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Backend/schema.sql).
+
+### 1. `users` Table
+Stores registered platform users and administrative credentials.
+
+| Column | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `INT` | `PRIMARY KEY`, `AUTO_INCREMENT` | Unique user identifier |
+| `name` | `VARCHAR(255)` | `NOT NULL` | User full name |
+| `email` | `VARCHAR(255)` | `NOT NULL`, `UNIQUE` | Normalized lowercase email address |
+| `password` | `VARCHAR(255)` | `NOT NULL` | Bcrypt-hashed password (10 salt rounds) |
+| `role` | `ENUM('user', 'admin')` | `DEFAULT 'user'` | Access permission tier |
+| `createdAt` | `DATETIME` | `NOT NULL`, `DEFAULT CURRENT_TIMESTAMP` | Account creation timestamp |
+| `updatedAt` | `DATETIME` | `NOT NULL`, `DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | Last profile update timestamp |
+
+### 2. `payments` Table
+Stores completed, pending, and failed payment transaction records.
+
+| Column | Type | Constraints | Description |
+| :--- | :--- | :--- | :--- |
+| `id` | `INT` | `PRIMARY KEY`, `AUTO_INCREMENT` | Unique payment transaction record ID |
+| `userId` | `INT` | `NOT NULL`, `INDEX`, `FOREIGN KEY (users.id) ON DELETE CASCADE` | Associated user ID |
+| `userName` | `VARCHAR(255)` | `NOT NULL` | Customer name at time of payment |
+| `amount` | `DECIMAL(10, 2)` | `NOT NULL` | Payment amount in currency units |
+| `currency` | `VARCHAR(10)` | `NOT NULL`, `DEFAULT 'usd'` | Lowercase currency code |
+| `status` | `ENUM('pending', 'paid', 'failed', 'completed')` | `NOT NULL`, `DEFAULT 'paid'`, `INDEX` | Lifecycle status of the payment |
+| `orderId` | `VARCHAR(255)` | `NOT NULL` | System or client-provided order reference |
+| `stripeCheckoutSessionId` | `VARCHAR(255)` | `UNIQUE`, `NULLABLE` | Stripe Checkout Session ID |
+| `stripePaymentIntentId` | `VARCHAR(255)` | `NULLABLE` | Stripe Payment Intent ID |
+| `paidAt` | `DATETIME` | `DEFAULT CURRENT_TIMESTAMP` | Timestamp when payment completed |
+| `failureMessage` | `TEXT` | `NULLABLE` | Failure details or webhook error messages |
+| `createdAt` | `DATETIME` | `NOT NULL`, `DEFAULT CURRENT_TIMESTAMP` | Record creation timestamp |
+| `updatedAt` | `DATETIME` | `NOT NULL`, `DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | Last record update timestamp |
+
+### Frontend Compatibility Layer
+Sequelize models implement custom `toJSON()` serialization:
+- Exposes `_id: String(this.id)` so React components referencing either `p.id` or `p._id` function seamlessly.
+- Exposes `userId` as a string so client-side operations (e.g. `(p.userId || '').toLowerCase()`) execute without type errors.
 
 ---
 
@@ -377,7 +428,8 @@ Registers a new user or admin.
   {
     "success": true,
     "user": {
-      "id": "66db53a8123...",
+      "id": 1,
+      "_id": "1",
       "email": "john@example.com",
       "name": "John Doe",
       "role": "user"
@@ -401,7 +453,8 @@ Authenticates an existing user.
   {
     "success": true,
     "user": {
-      "id": "66db53a8123...",
+      "id": 1,
+      "_id": "1",
       "email": "john@example.com",
       "name": "John Doe",
       "role": "user"
@@ -432,7 +485,7 @@ Records an instant/direct payment.
 - **Request Body**:
   ```json
   {
-    "userId": "66db53a8123...",
+    "userId": "1",
     "userName": "John Doe",
     "amount": 50,
     "currency": "usd"
@@ -444,12 +497,14 @@ Records an instant/direct payment.
     "success": true,
     "message": "Payment of $50 successfully recorded.",
     "payment": {
-      "_id": "66db54b9456...",
-      "userId": "66db53a8123...",
+      "id": 1,
+      "_id": "1",
+      "userId": "1",
       "userName": "John Doe",
-      "amount": 50,
+      "amount": "50.00",
       "currency": "usd",
       "status": "paid",
+      "orderId": "order_1741480000_a1b2c3d4",
       "paidAt": "2026-09-07T11:30:00.000Z"
     }
   }
@@ -460,7 +515,7 @@ Creates a Stripe Checkout Session and initializes a `pending` payment record.
 - **Request Body**:
   ```json
   {
-    "userId": "66db53a8123...",
+    "userId": "1",
     "userName": "John Doe",
     "amount": 100,
     "currency": "usd",
@@ -473,10 +528,12 @@ Creates a Stripe Checkout Session and initializes a `pending` payment record.
     "success": true,
     "url": "https://checkout.stripe.com/c/pay/cs_test_...",
     "payment": {
-      "_id": "66db55c1789...",
+      "id": 2,
+      "_id": "2",
+      "userId": "1",
       "status": "pending",
       "stripeCheckoutSessionId": "cs_test_...",
-      "amount": 100
+      "amount": "100.00"
     }
   }
   ```
@@ -501,15 +558,17 @@ Fetches transaction history for a specific customer.
   ```json
   {
     "success": true,
-    "count": 2,
+    "count": 1,
     "payments": [
       {
-        "_id": "66db54b9456...",
-        "userId": "66db53a8123...",
+        "id": 1,
+        "_id": "1",
+        "userId": "1",
         "userName": "John Doe",
-        "amount": 50,
+        "amount": "50.00",
         "currency": "usd",
         "status": "paid",
+        "orderId": "order_1741480000_a1b2c3d4",
         "createdAt": "2026-09-07T11:30:00.000Z"
       }
     ]

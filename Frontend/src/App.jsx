@@ -43,7 +43,9 @@ export default function App() {
       />
       <main className="main-content">
         {activeTab === 'pay' && <PayPage user={user} />}
-        {activeTab === 'my-payments' && <MyPaymentsPage user={user} />}
+        {activeTab === 'my-payments' && (
+          <MyPaymentsPage user={user} onNavigateToPay={() => setActiveTab('pay')} />
+        )}
         {activeTab === 'admin' && <AdminPanel user={user} />}
       </main>
     </div>

@@ -11,17 +11,29 @@ const dbUser = process.env.MYSQL_USER || "root";
 const dbPassword = process.env.MYSQL_PASSWORD || "";
 const dbName = process.env.MYSQL_DATABASE || "payment_gateway";
 
-// Sequelize instance
+// Sequelize instance with connection pooling
 export const sequelize = process.env.MYSQL_URI
     ? new Sequelize(process.env.MYSQL_URI, {
         dialect: "mysql",
         logging: false,
+        pool: {
+            max: 10,
+            min: 0,
+            acquire: 30000,
+            idle: 10000,
+        },
     })
     : new Sequelize(dbName, dbUser, dbPassword, {
         host: dbHost,
         port: dbPort,
         dialect: "mysql",
         logging: false,
+        pool: {
+            max: 10,
+            min: 0,
+            acquire: 30000,
+            idle: 10000,
+        },
     });
 
 // Auto-create database if not exists
@@ -71,7 +83,7 @@ const db = async () => {
     try {
         await createDatabaseIfNotExists();
         await sequelize.authenticate();
-        console.log("MySQL is connected successfully!");
+        console.log("MySQL database connected successfully.");
 
         // Load models and sync schema
         await import("../model/user.model.js");

@@ -39,9 +39,10 @@ const User = sequelize.define("User", {
     timestamps: true,
 });
 
-// Expose _id for frontend compatibility
+// Expose safe user properties and _id for frontend compatibility
 User.prototype.toJSON = function () {
     const values = { ...this.get() };
+    delete values.password; // Never expose password hashes in API responses
     if (values.id !== undefined) {
         values._id = String(values.id);
     }

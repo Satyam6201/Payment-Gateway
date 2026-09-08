@@ -1,4 +1,5 @@
 import Payment from "../model/payment.model.js";
+import User from "../model/user.model.js";
 import stripe from "stripe";
 import crypto from "crypto";
 
@@ -22,8 +23,25 @@ export const createPayment = async (req, res) => {
             });
         }
 
+        const numericUserId = Number(userId);
+        if (!numericUserId || isNaN(numericUserId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid User ID format.",
+            });
+        }
+
+        // Verify user exists in database to prevent foreign key errors
+        const targetUser = await User.findByPk(numericUserId);
+        if (!targetUser) {
+            return res.status(404).json({
+                success: false,
+                message: "User account not found. Please log in again.",
+            });
+        }
+
         const numericAmount = Number(amount);
-        if (!numericAmount || numericAmount <= 0) {
+        if (!numericAmount || numericAmount <= 0 || isNaN(numericAmount)) {
             return res.status(400).json({
                 success: false,
                 message: "Please enter a valid positive payment amount.",
@@ -31,7 +49,7 @@ export const createPayment = async (req, res) => {
         }
 
         const payment = await Payment.create({
-            userId: Number(userId) || userId,
+            userId: numericUserId,
             userName: userName.trim(),
             amount: numericAmount,
             currency: currency.toLowerCase().trim(),
@@ -41,7 +59,7 @@ export const createPayment = async (req, res) => {
 
         return res.status(201).json({
             success: true,
-            message: `Payment of $${numericAmount} successfully recorded.`,
+            message: `Payment of ${currency.toUpperCase()} ${numericAmount} successfully recorded.`,
             payment,
         });
     } catch (error) {
@@ -56,10 +74,27 @@ export const placeOrderStripe = async (req, res) => {
         const userName = req.body.userName || "Customer";
         const { orderId, amount, currency = "usd" } = req.body;
 
-        if (!userId || !amount || Number(amount) <= 0) {
+        const numericUserId = Number(userId);
+        if (!numericUserId || isNaN(numericUserId)) {
             return res.status(400).json({
                 success: false,
-                message: "User ID and a valid positive amount are required.",
+                message: "Valid User ID is required.",
+            });
+        }
+
+        const targetUser = await User.findByPk(numericUserId);
+        if (!targetUser) {
+            return res.status(404).json({
+                success: false,
+                message: "User account not found.",
+            });
+        }
+
+        const numericAmount = Number(amount);
+        if (!numericAmount || numericAmount <= 0 || isNaN(numericAmount)) {
+            return res.status(400).json({
+                success: false,
+                message: "A valid positive transfer amount is required.",
             });
         }
 
@@ -73,7 +108,6 @@ export const placeOrderStripe = async (req, res) => {
             });
         }
 
-        const numericAmount = Number(amount);
         const normalizedCurrency = currency.toLowerCase().trim();
         const safeOrderId = orderId || `order_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
 
@@ -92,14 +126,14 @@ export const placeOrderStripe = async (req, res) => {
             success_url: `${req.headers.origin || "http://localhost:5173"}/payment/success`,
             cancel_url: `${req.headers.origin || "http://localhost:5173"}/payment/cancel`,
             metadata: {
-                userId: userId.toString(),
+                userId: numericUserId.toString(),
                 userName,
                 orderId: safeOrderId,
             },
         });
 
         const payment = await Payment.create({
-            userId: Number(userId) || userId,
+            userId: numericUserId,
             userName: userName.trim(),
             orderId: safeOrderId,
             amount: numericAmount,
@@ -174,8 +208,13 @@ export const getUserPayments = async (req, res) => {
             return res.status(400).json({ success: false, message: "User ID is required" });
         }
 
+        const numericUserId = Number(userId);
+        if (!numericUserId || isNaN(numericUserId)) {
+            return res.status(400).json({ success: false, message: "Invalid User ID format." });
+        }
+
         const payments = await Payment.findAll({
-            where: { userId: Number(userId) || userId },
+            where: { userId: numericUserId },
             order: [["createdAt", "DESC"]],
         });
 

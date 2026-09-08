@@ -212,27 +212,29 @@ export const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'satyam@gmail.com
 
 ---
 
-## 🎨 Design System & CSS Architecture (`App.css`)
+## 🎨 Design System & Modular CSS Architecture
 
-All styling is managed cleanly in [`src/App.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/App.css).
+Styling is cleanly modularized by component matching each JSX file, eliminating monolithic CSS bloat and enabling isolated style maintainability:
 
-### Visual Tokens & Color Palette
-- **Canvas Background**: `#f3f4f6` (Soft neutral gray)
-- **Card Background**: `#ffffff` (Pure white with subtle border `#e5e7eb` and drop shadow)
-- **Primary Text**: `#111827` (Deep slate)
-- **Secondary / Subtitle Text**: `#6b7280` (Muted gray)
-- **Primary Buttons & Active Tabs**: `#1e293b` (Dark charcoal)
-- **Admin Accents**: `#b45309` / `#fef3c7` (Warm amber)
+| Component JSX | Dedicated CSS | Key Responsibilities |
+| :--- | :--- | :--- |
+| [`main.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/main.jsx) | [`src/index.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/index.css) | Global `:root` tokens, typography, resets, animations, status badges, spinners |
+| [`App.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/App.jsx) | [`src/App.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/App.css) | Root layout (`.app-root`, `.main-content`), `.card-elevated`, shared modal dialog shell |
+| [`Navbar.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/Navbar.jsx) | [`src/components/Navbar.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/Navbar.css) | Frosted header, brand lockup, navigation pills, user profile initials avatar, logout button |
+| [`AuthPage.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/AuthPage.jsx) | [`src/components/AuthPage.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/AuthPage.css) | Ambient glowing blur orbs, auth cards, form groups, password eye toggle, demo autofill pill |
+| [`PayPage.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/PayPage.jsx) | [`src/components/PayPage.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/PayPage.css) | Method selector cards, currency pills, preset amount chips, live fee sidebar, celebration receipt |
+| [`MyPaymentsPage.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/MyPaymentsPage.jsx) | [`src/components/MyPaymentsPage.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/MyPaymentsPage.css) | Activity stats cards, search input, status filters, modern interactive table, empty & loading states |
+| [`AdminPanel.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/AdminPanel.jsx) | [`src/components/AdminPanel.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/AdminPanel.css) | Live system badge, financial KPI metric cards, CSV report export, customer avatar cells, access guard |
+
+### Visual Tokens & Color Palette (`index.css`)
+- **Primary Indigo**: `#4f46e5` / `#4338ca` (Interactive buttons, focused borders, active tabs)
+- **Accent Cyan**: `#06b6d4` / `#ecfeff` (Direct transfer badges, live indicators)
+- **Canvas Background**: `#f8fafc` (Clean contemporary background)
+- **Card Background**: `#ffffff` (Elevated cards with smooth borders and layered drop shadows)
 - **Status Colors**:
-  - `paid` / `completed` / `success`: Background `#dcfce7`, text `#166534` (Emerald green)
-  - `pending`: Background `#fef9c3`, text `#854d0e` (Amber yellow)
-  - `failed` / `error`: Background `#fee2e2`, text `#991b1b` (Crimson red)
-
-### Responsive Layout Strategy
-- **Card Containers**: Fixed max-widths (`440px` for standard payment/auth cards; `800px` for `.card-wide` tables).
-- **Preset Grid**: 4-column responsive grid (`grid-template-columns: repeat(4, 1fr)`).
-- **Stats Row**: 2-column KPI metric display (`grid-template-columns: 1fr 1fr`).
-- **Data Tables**: Striped table with sticky borders, hover backgrounds, and inline monospace identifiers.
+  - `paid` / `completed` / `success`: Background `#d1fae5`, text `#065f46` (Emerald green)
+  - `pending`: Background `#fef3c7`, text `#92400e` (Amber)
+  - `failed` / `error`: Background `#fee2e2`, text `#991b1b` (Crimson)
 
 ---
 

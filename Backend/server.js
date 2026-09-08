@@ -10,7 +10,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-// Enable CORS for frontend clients
+// CORS setup for local frontend clients
 app.use(cors({
     origin: [
         "http://localhost:5173",
@@ -21,29 +21,37 @@ app.use(cors({
     credentials: true,
 }));
 
-// Stripe webhook requires raw body
+// Stripe webhook requires raw body for cryptographic signature verification
 app.use(["/api/order/webhook", "/api/payment/webhook"], express.raw({ type: "application/json" }));
 app.use(express.json());
 
-// Health check
+// API health check
 app.get("/", (req, res) => {
-    return res.status(200).json({ status: "ok", message: "Assignment Payment API is running" });
+    return res.status(200).json({ status: "ok", message: "Assignment Payment API is operational" });
 });
 
-// Routes
+// Application routes
 app.use("/api/user", userRouter);
 app.use("/api/order", paymentRouter);
 app.use("/api/payment", paymentRouter);
 
-// Global error handler
+// Centralized error handler
 app.use((err, req, res, next) => {
-    console.error("Unhandled server error:", err);
-    return res.status(500).json({ success: false, message: "Internal server error" });
+    console.error("Internal Server Error:", err.stack || err);
+    return res.status(500).json({ success: false, message: "Internal server error. Please try again later." });
 });
 
-// Connect to database and start server
-await db();
+// Bootstrap server
+const startServer = async () => {
+    try {
+        await db();
+        app.listen(PORT, () => {
+            console.log(`Assignment Pay API running on http://localhost:${PORT}`);
+        });
+    } catch (err) {
+        console.error("Failed to start server:", err.message);
+        process.exit(1);
+    }
+};
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+startServer();
