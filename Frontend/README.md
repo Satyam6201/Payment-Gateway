@@ -78,7 +78,7 @@ Session data is managed within [`App.jsx`](file:///c:/Users/satya/OneDrive/Deskt
 ### User Object Schema
 ```typescript
 interface User {
-  id: string;        // MongoDB ObjectId
+  id: string;        // User unique identifier
   name: string;      // User's full name
   email: string;     // Normalized lowercase email address
   role: 'user' | 'admin'; // Authorization tier
@@ -166,7 +166,7 @@ interface User {
     - **Date**: Formatted via `toLocaleDateString()`.
     - **Amount**: Bold currency notation (`$X`).
     - **Status Badge**: Context-aware color styling (`paid`, `pending`, `failed`, `completed`).
-    - **Transaction ID**: Monospaced code block displaying the MongoDB `_id`.
+    - **Transaction ID**: Monospaced code block displaying the payment record ID (`_id`).
   - **Empty & Loading States**: Clean indicators for `"Loading..."` or `"No payments found."`.
   - **Manual Refresh**: Includes a `"Refresh"` button in the card header for on-demand synchronization.
 

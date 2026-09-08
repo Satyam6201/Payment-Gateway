@@ -1,53 +1,92 @@
-import mongoose from "mongoose";
+import { DataTypes } from "sequelize";
+import crypto from "crypto";
+import { sequelize } from "../config/db.js";
+import User from "./user.model.js";
 
-const paymentSchema = new mongoose.Schema({
+const Payment = sequelize.define("Payment", {
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+    },
     userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "user",
-        required: true,
-        index: true,
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: User,
+            key: "id",
+        },
     },
     userName: {
-        type: String,
-        required: true,
+        type: DataTypes.STRING(255),
+        allowNull: false,
     },
     amount: {
-        type: Number,
-        required: true,
-        min: 0,
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+        validate: {
+            min: 0,
+        },
     },
     currency: {
-        type: String,
-        required: true,
-        lowercase: true,
-        default: "usd",
+        type: DataTypes.STRING(10),
+        allowNull: false,
+        defaultValue: "usd",
+        set(value) {
+            this.setDataValue("currency", value ? value.trim().toLowerCase() : "usd");
+        },
     },
     status: {
-        type: String,
-        enum: ["pending", "paid", "failed", "completed"],
-        default: "paid",
-        index: true,
+        type: DataTypes.ENUM("pending", "paid", "failed", "completed"),
+        defaultValue: "paid",
+        allowNull: false,
     },
     orderId: {
-        type: String,
-        default: () => new mongoose.Types.ObjectId().toString(),
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        defaultValue: () => `order_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`,
     },
     stripeCheckoutSessionId: {
-        type: String,
-        default: () => `direct_${new mongoose.Types.ObjectId()}`,
+        type: DataTypes.STRING(255),
+        allowNull: true,
         unique: true,
-        sparse: true,
+        defaultValue: () => `direct_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`,
     },
     stripePaymentIntentId: {
-        type: String,
+        type: DataTypes.STRING(255),
+        allowNull: true,
     },
     paidAt: {
-        type: Date,
-        default: Date.now,
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
     },
-    failureMessage: String,
-}, { timestamps: true });
+    failureMessage: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+}, {
+    tableName: "payments",
+    timestamps: true,
+    indexes: [
+        { fields: ["userId"] },
+        { fields: ["status"] },
+    ],
+});
 
-const Payment = mongoose.models.payment || mongoose.model("payment", paymentSchema);
+// Relationships
+User.hasMany(Payment, { foreignKey: "userId", as: "payments", onDelete: "CASCADE" });
+Payment.belongsTo(User, { foreignKey: "userId", as: "user" });
+
+// Expose _id and string userId for frontend compatibility
+Payment.prototype.toJSON = function () {
+    const values = { ...this.get() };
+    if (values.id !== undefined) {
+        values._id = String(values.id);
+    }
+    if (values.userId !== undefined && values.userId !== null) {
+        values.userId = String(values.userId);
+    }
+    return values;
+};
 
 export default Payment;

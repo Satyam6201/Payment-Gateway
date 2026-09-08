@@ -1,12 +1,51 @@
-import mongoose from 'mongoose';
+import { DataTypes } from "sequelize";
+import { sequelize } from "../config/db.js";
 
-const userSchema = new mongoose.Schema({
-    name: { type: String, required: true, trim: true },
-    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    password: { type: String, required: true },
-    role: { type: String, enum: ['user', 'admin'], default: 'user' },
-}, { timestamps: true, minimize: false });
+const User = sequelize.define("User", {
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+    },
+    name: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        validate: {
+            notEmpty: true,
+        },
+    },
+    email: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        unique: true,
+        validate: {
+            isEmail: true,
+        },
+        set(value) {
+            this.setDataValue("email", value ? value.trim().toLowerCase() : value);
+        },
+    },
+    password: {
+        type: DataTypes.STRING(255),
+        allowNull: false,
+    },
+    role: {
+        type: DataTypes.ENUM("user", "admin"),
+        defaultValue: "user",
+        allowNull: false,
+    },
+}, {
+    tableName: "users",
+    timestamps: true,
+});
 
-const User = mongoose.models.user || mongoose.model('user', userSchema);
+// Expose _id for frontend compatibility
+User.prototype.toJSON = function () {
+    const values = { ...this.get() };
+    if (values.id !== undefined) {
+        values._id = String(values.id);
+    }
+    return values;
+};
 
 export default User;

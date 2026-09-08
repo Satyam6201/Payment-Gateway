@@ -4,11 +4,11 @@
 [![Express.js](https://img.shields.io/badge/Express.js-5.x-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
 [![React](https://img.shields.io/badge/React-19.x-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8.x-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0+-00758F?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![Stripe](https://img.shields.io/badge/Stripe-API-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://stripe.com/)
 [![License](https://img.shields.io/badge/License-ISC-blue?style=for-the-badge)](LICENSE)
 
-A full-stack modern payment processing, transaction history tracking, and administrator analytics platform. Built with a decoupled **Express.js / MongoDB** backend and a responsive **React 19 / Vite** frontend, featuring both simulated instant payments and live **Stripe Checkout** session integration with asynchronous webhook verification.
+A full-stack modern payment processing, transaction history tracking, and administrator analytics platform. Built with a decoupled **Express.js / MySQL** backend and a responsive **React 19 / Vite** frontend, featuring both simulated instant payments and live **Stripe Checkout** session integration with asynchronous webhook verification.
 
 ---
 
@@ -70,7 +70,7 @@ flowchart TD
     end
 
     subgraph External["External Services & Storage"]
-        Mongo[(MongoDB Atlas)]
+        MySQL[(MySQL Database)]
         StripeGateway[Stripe Checkout API]
     end
 
@@ -82,15 +82,15 @@ flowchart TD
     HistoryView -->|GET /api/order/payments?userId=...| PayCtrl
     AdminView -->|GET /api/order/all?adminEmail=...| PayCtrl
 
-    AuthCtrl -->|Verify & Store User| Mongo
-    PayCtrl -->|Create / Fetch Orders| Mongo
+    AuthCtrl -->|Verify & Store User| MySQL
+    PayCtrl -->|Create / Fetch Orders| MySQL
     PayCtrl -->|Create Checkout Session| StripeGateway
     StripeGateway -->|Customer Completes Payment| StripeGateway
     StripeGateway -->|POST /api/order/webhook| WebhookHandler
-    WebhookHandler -->|Update Order Status: paid / failed| Mongo
+    WebhookHandler -->|Update Order Status: paid / failed| MySQL
 
     Server -.->|On Boot Connection| AutoSeed
-    AutoSeed -.->|Ensure admin user exists| Mongo
+    AutoSeed -.->|Ensure admin user exists| MySQL
 ```
 
 ---
@@ -106,7 +106,7 @@ flowchart TD
 ### 💳 2. Payment Checkout Flow
 - **Quick Presets**: Single-click buttons for frequent denominations (\$20, \$50, \$60, \$100).
 - **Custom Denominations**: Number input with decimal/float validation.
-- **Direct Processing Route**: `/api/order/pay` immediately stores successful transaction records into MongoDB.
+- **Direct Processing Route**: `/api/order/pay` immediately stores successful transaction records into MySQL.
 - **Stripe Checkout Route**: `/api/order/stripe` provisions a Stripe Checkout Session with product metadata, sets payment status to `pending`, and provides a redirection URL.
 
 ### 🔔 3. Webhook Synchronization
@@ -129,11 +129,11 @@ flowchart TD
   - **Total Transaction Count**: Comprehensive count of orders in system.
 - **Live Search & Filter**: Real-time multi-column filter matching across:
   - Customer Full Name
-  - User ID (`ObjectId`)
-  - Payment Transaction ID (`ObjectId`)
+  - User ID
+  - Payment Transaction ID
 
 ### ⚡ 6. Zero-Config Database Seeding
-- On every server start, `config/db.js` verifies whether the default administrative account (`satyam@gmail.com`) exists in the MongoDB database.
+- On every server start, `config/db.js` verifies whether the default administrative account (`satyam@gmail.com`) exists in the MySQL database.
 - If missing, it automatically seeds the account with a securely hashed default password (`Satyam@62`) and assigns the `admin` role.
 
 ---
@@ -154,7 +154,8 @@ flowchart TD
 | :--- | :--- | :--- |
 | **Node.js** | `>= 18.x` | JavaScript runtime environment (ES Module standard) |
 | **Express** | `^5.2.1` | REST API routing and middleware framework |
-| **Mongoose** | `^9.9.5` | Object Data Modeling (ODM) library for MongoDB |
+| **Sequelize** | `^6.37.8` | Relational ORM for MySQL with auto-sync and migrations |
+| **mysql2** | `^3.24.4` | High-performance MySQL driver with connection pooling |
 | **bcryptjs** | `^3.0.3` | Salted password hashing algorithm |
 | **jsonwebtoken** | `^9.0.3` | JWT issuance and verification |
 | **stripe** | `^22.6.1` | Official Node.js Stripe SDK for checkout & webhooks |
@@ -173,18 +174,19 @@ Payment-Gateway/
 │
 ├── Backend/                        # Node.js + Express REST API Server
 │   ├── config/
-│   │   └── db.js                   # Mongoose connection & admin auto-seeding logic
+│   │   └── db.js                   # MySQL connection, auto-sync & admin auto-seeding logic
 │   ├── controller/
 │   │   ├── payment.js              # Payment handling, Stripe checkout, webhooks & queries
 │   │   └── user.js                 # Authentication controllers (register, login, logout)
 │   ├── model/
-│   │   ├── payment.model.js        # Mongoose schema for transaction records
-│   │   └── user.model.js           # Mongoose schema for registered users
+│   │   ├── payment.model.js        # Sequelize schema for transaction records
+│   │   └── user.model.js           # Sequelize schema for registered users
 │   ├── router/
 │   │   ├── paymentRouter.js        # /api/order and /api/payment endpoints
 │   │   └── userRouter.js           # /api/user authentication endpoints
 │   ├── .env.example                # Backend environment variable template
 │   ├── package.json                # Express dependencies and scripts
+│   ├── schema.sql                  # Direct MySQL DDL schema definitions
 │   └── server.js                   # Main application entry point & middleware pipeline
 │
 └── Frontend/                       # React 19 + Vite Single Page Application (SPA)
@@ -222,7 +224,7 @@ Payment-Gateway/
 Ensure you have the following installed on your local machine:
 - **Node.js**: `v18.0.0` or higher ([Download](https://nodejs.org/))
 - **npm**: `v9.0.0` or higher (bundled with Node.js)
-- **MongoDB**: A free cloud cluster on [MongoDB Atlas](https://www.mongodb.com/atlas) or a local MongoDB community server.
+- **MySQL**: MySQL 8.0+ server (local installation, XAMPP, Docker, or cloud instance).
 - *(Optional)* **Stripe Account**: For live Stripe Checkout and webhook testing ([Sign up](https://stripe.com)).
 
 ---
@@ -237,8 +239,15 @@ Create a file named `.env` in the `Backend` directory:
 # Port on which the Express server listens
 PORT=8000
 
-# MongoDB Atlas or local MongoDB connection URI
-MONGODB_URL=mongodb+srv://<username>:<password>@cluster0.mongodb.net/assignment_payments?retryWrites=true&w=majority
+# MySQL Database Configuration
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=
+MYSQL_DATABASE=payment_gateway
+
+# Alternatively, provide a full MySQL connection URI:
+# MYSQL_URI=mysql://root:password@localhost:3306/payment_gateway
 
 # Secret key used for signing JWT tokens
 JWT_SECRET=your_jwt_secret_key_here
@@ -281,13 +290,13 @@ VITE_ADMIN_EMAIL=satyam@gmail.com
      ```bash
      cp .env.example .env
      ```
-   - Populate `MONGODB_URL` and `JWT_SECRET`.
+   - Populate `MYSQL_USER`, `MYSQL_PASSWORD`, and `JWT_SECRET`.
 
 4. Start the backend development server:
    ```bash
    npm run dev
    ```
-   *The server will start on `http://localhost:8000` and automatically connect to MongoDB and seed the default admin account.*
+   *The server will start on `http://localhost:8000`, automatically create the database if needed, synchronize tables, and seed the default admin account.*
 
 ---
 
@@ -569,7 +578,7 @@ To test Stripe Checkout Sessions and Webhook callbacks locally:
 3. **Raw Body Parsing Isolation**: Webhook endpoints are selectively parsed as raw streams before general JSON middlewares, preventing JSON tampering and enabling reliable HMAC-SHA256 signature verification.
 4. **CORS Whitelist Protection**: Express restricts cross-origin resource requests specifically to local frontend dev ports (`5173`, `5174`) with credentials enabled.
 5. **Role-Based Guards**: Sensitive administrative routes enforce email and role checks at both client UI and API controller levels.
-6. **Defensive Schema Design**: Indexed MongoDB queries on `userId` and `status` optimize read performance as transaction volume scales.
+6. **Defensive Schema Design**: Indexed MySQL queries on `userId` and `status` optimize read performance as transaction volume scales.
 
 ---
 
@@ -579,9 +588,9 @@ To test Stripe Checkout Sessions and Webhook callbacks locally:
 - Verify the backend server is running: `http://localhost:8000` (should return JSON `{ status: "ok" }`).
 - Check `Frontend/.env` and ensure `VITE_API_URL=http://localhost:8000`.
 
-### 2. `MongoDB connection error: MONGODB_URL environment variable is not defined`
-- Ensure a `.env` file exists in the `Backend` directory containing a valid `MONGODB_URL`.
-- Check that your IP address is whitelisted in MongoDB Atlas Network Access.
+### 2. `MySQL connection error`
+- Ensure your local MySQL server is running (e.g. port 3306).
+- Check `Backend/.env` and ensure `MYSQL_USER` and `MYSQL_PASSWORD` match your MySQL setup.
 
 ### 3. Stripe Webhook Signature Verification Failed
 - Ensure you pass the exact secret provided by `stripe listen` as `STRIPE_WEBHOOK_SECRET`.

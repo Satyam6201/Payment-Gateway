@@ -1,5 +1,6 @@
 import Payment from "../model/payment.model.js";
 import stripe from "stripe";
+import crypto from "crypto";
 
 const getStripeClient = () => {
     if (!process.env.STRIPE_SECRET_KEY) {
@@ -30,7 +31,7 @@ export const createPayment = async (req, res) => {
         }
 
         const payment = await Payment.create({
-            userId,
+            userId: Number(userId) || userId,
             userName: userName.trim(),
             amount: numericAmount,
             currency: currency.toLowerCase().trim(),
@@ -74,7 +75,7 @@ export const placeOrderStripe = async (req, res) => {
 
         const numericAmount = Number(amount);
         const normalizedCurrency = currency.toLowerCase().trim();
-        const safeOrderId = orderId || Date.now().toString();
+        const safeOrderId = orderId || `order_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
 
         const session = await stripeInstance.checkout.sessions.create({
             mode: "payment",
@@ -98,13 +99,13 @@ export const placeOrderStripe = async (req, res) => {
         });
 
         const payment = await Payment.create({
-            userId,
+            userId: Number(userId) || userId,
             userName: userName.trim(),
             orderId: safeOrderId,
             amount: numericAmount,
             currency: normalizedCurrency,
             stripeCheckoutSessionId: session.id,
-            stripePaymentIntentId: session.payment_intent,
+            stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : null,
             status: "pending",
         });
 
@@ -139,24 +140,26 @@ export const stripeWebhook = async (req, res) => {
     const session = event.data.object;
 
     if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
-        await Payment.findOneAndUpdate(
-            { stripeCheckoutSessionId: session.id },
+        await Payment.update(
             {
                 status: "paid",
-                stripePaymentIntentId: session.payment_intent,
+                stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : null,
                 paidAt: new Date(),
             },
-            { new: true }
+            {
+                where: { stripeCheckoutSessionId: session.id },
+            }
         );
     } else if (event.type === "checkout.session.async_payment_failed" || event.type === "checkout.session.expired") {
-        await Payment.findOneAndUpdate(
-            { stripeCheckoutSessionId: session.id },
+        await Payment.update(
             {
                 status: "failed",
-                stripePaymentIntentId: session.payment_intent,
+                stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : null,
                 failureMessage: session.last_payment_error?.message || "Payment failed or session expired",
             },
-            { new: true }
+            {
+                where: { stripeCheckoutSessionId: session.id },
+            }
         );
     }
 
@@ -171,7 +174,10 @@ export const getUserPayments = async (req, res) => {
             return res.status(400).json({ success: false, message: "User ID is required" });
         }
 
-        const payments = await Payment.find({ userId }).sort({ createdAt: -1 });
+        const payments = await Payment.findAll({
+            where: { userId: Number(userId) || userId },
+            order: [["createdAt", "DESC"]],
+        });
 
         return res.json({ success: true, count: payments.length, payments });
     } catch (error) {
@@ -191,7 +197,9 @@ export const getAllPayments = async (req, res) => {
             });
         }
 
-        const payments = await Payment.find({}).sort({ createdAt: -1 });
+        const payments = await Payment.findAll({
+            order: [["createdAt", "DESC"]],
+        });
 
         return res.json({ success: true, count: payments.length, payments });
     } catch (error) {

@@ -10,7 +10,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-// Middleware cors
+// Enable CORS for frontend clients
 app.use(cors({
     origin: [
         "http://localhost:5173",
@@ -21,27 +21,27 @@ app.use(cors({
     credentials: true,
 }));
 
-// Stripe  raw body before JSON parser
+// Stripe webhook requires raw body
 app.use(["/api/order/webhook", "/api/payment/webhook"], express.raw({ type: "application/json" }));
 app.use(express.json());
 
-// Healthcheck endpoint
+// Health check
 app.get("/", (req, res) => {
     return res.status(200).json({ status: "ok", message: "Assignment Payment API is running" });
 });
 
-//  Routes
+// Routes
 app.use("/api/user", userRouter);
 app.use("/api/order", paymentRouter);
 app.use("/api/payment", paymentRouter);
 
-// Global Error Handler
+// Global error handler
 app.use((err, req, res, next) => {
     console.error("Unhandled server error:", err);
     return res.status(500).json({ success: false, message: "Internal server error" });
 });
 
-// Connect to Database 
+// Connect to database and start server
 await db();
 
 app.listen(PORT, () => {
