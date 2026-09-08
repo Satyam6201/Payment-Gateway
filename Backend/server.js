@@ -10,7 +10,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-// CORS setup for local frontend clients
+// CORS 
 app.use(cors({
     origin: [
         "http://localhost:5173",
@@ -21,7 +21,6 @@ app.use(cors({
     credentials: true,
 }));
 
-// Stripe webhook requires raw body for cryptographic signature verification
 app.use(["/api/order/webhook", "/api/payment/webhook"], express.raw({ type: "application/json" }));
 app.use(express.json());
 
