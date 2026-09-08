@@ -3,10 +3,10 @@
 [![React](https://img.shields.io/badge/React-19.2.8-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8.2.2-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![JavaScript](https://img.shields.io/badge/ES_Modules-ES2022-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/)
-[![CSS3](https://img.shields.io/badge/CSS3-Modern_Flexbox_%26_Grid-1572B6?style=for-the-badge&logo=css3&logoColor=white)](https://www.w3.org/TR/CSS/)
+[![CSS3](https://img.shields.io/badge/CSS3-Modular_Component_CSS-1572B6?style=for-the-badge&logo=css3&logoColor=white)](https://www.w3.org/TR/CSS/)
 [![ESLint](https://img.shields.io/badge/ESLint-10.x-4B32C3?style=for-the-badge&logo=eslint&logoColor=white)](https://eslint.org/)
 
-This document provides a comprehensive, component-by-component, and architectural breakdown of the **Assignment Pay** frontend client. It covers state management, UI component trees, styling architecture, API interactions, and development workflows.
+This document provides a comprehensive, component-by-component, and architectural breakdown of the **Assignment Pay** frontend client. It covers state management, UI component trees, modular per-component styling architecture, Stripe-only checkout flow, API interactions, and developer workflows.
 
 ---
 
@@ -16,15 +16,15 @@ This document provides a comprehensive, component-by-component, and architectura
 - [Component Hierarchy & Data Flow](#-component-hierarchy--data-flow)
 - [Application State & Session Management](#-application-state--session-management)
 - [In-Depth Component Breakdown](#-in-depth-component-breakdown)
-  - [1. App.jsx (Root Controller)](#1-appjsx-root-controller)
+  - [1. App.jsx (Root Controller & Stripe Redirects)](#1-appjsx-root-controller--stripe-redirects)
   - [2. Navbar.jsx (Header & Navigation)](#2-navbarjsx-header--navigation)
   - [3. AuthPage.jsx (Authentication Portal)](#3-authpagejsx-authentication-portal)
-  - [4. PayPage.jsx (Payment Processing)](#4-paypagejsx-payment-processing)
-  - [5. MyPaymentsPage.jsx (Personal Order History)](#5-mypaymentspagejsx-personal-order-history)
-  - [6. AdminPanel.jsx (Analytics & Management)](#6-adminpaneljsx-analytics--management)
+  - [4. PayPage.jsx (Stripe Checkout & Currencies)](#4-paypagejsx-stripe-checkout--currencies)
+  - [5. MyPaymentsPage.jsx (History & Receipt Download)](#5-mypaymentspagejsx-history--receipt-download)
+  - [6. AdminPanel.jsx (Analytics, Volumes & CSV Export)](#6-adminpaneljsx-analytics-volumes--csv-export)
+  - [7. icons.jsx (Vector SVG Icon Suite)](#7-iconsjsx-vector-svg-icon-suite)
+- [Design System & Modular CSS Architecture](#-design-system--modular-css-architecture)
 - [API Layer & Configuration (api.js)](#-api-layer--configuration-apijs)
-- [Design System & CSS Architecture (App.css)](#-design-system--css-architecture-appcss)
-- [Public Assets & Static Resources](#-public-assets--static-resources)
 - [Component Props & State Reference](#-component-props--state-reference)
 - [Developer Workflow & Scripts](#-developer-workflow--scripts)
 - [User Interaction Flows](#-user-interaction-flows)
@@ -34,13 +34,15 @@ This document provides a comprehensive, component-by-component, and architectura
 
 ## 🏗 Architectural Overview
 
-The frontend is constructed as a **Single Page Application (SPA)** using **React 19** and bundled with **Vite 8**. It adheres to a component-driven architecture with centralized session synchronization through browser `localStorage`.
+The frontend is constructed as a **Single Page Application (SPA)** using **React 19** and bundled with **Vite 8**. It adheres to a clean, component-driven architecture with modular per-component styling and centralized session persistence through browser `localStorage`.
 
 ### Key Design Principles:
-- **Zero External UI Bloat**: Built purely with idiomatic React and responsive native CSS3 (no heavy UI libraries like Tailwind, MUI, or Bootstrap).
-- **Fast Startup & Hot Module Replacement (HMR)**: Powered by Vite's native ES module serving.
-- **Role-Gated Views**: Navigation tabs and administrative screens automatically adapt according to the authenticated user's role and email.
-- **Fault-Tolerant Client State**: Seamless recovery across page refreshes using persistent storage with fallback error handlers.
+- **Zero Framework Bloat**: Pure modern React and scoped native CSS3 (no bulky UI libraries like Tailwind, Bootstrap, or Material UI).
+- **Clean Human-Designed Layout**: Minimalist cards, subtle borders, clean typography, and zero robotic gradients or oversized glow effects.
+- **Stripe Mode Focus**: The checkout experience is focused entirely on Stripe Checkout (no confusing Instant Pay toggles).
+- **Currencies Restricted**: Strictly limited to **USD ($)** and **Rupees (₹ / INR)**.
+- **Modular Stylesheet Per Component**: Every `.jsx` component has an accompanying `.css` file with scoped class names.
+- **Lightweight SVG Icons**: Built-in SVG icons with smooth CSS animation support.
 
 ---
 
@@ -49,7 +51,7 @@ The frontend is constructed as a **Single Page Application (SPA)** using **React
 ```mermaid
 flowchart TD
     IndexHTML["index.html (#root)"] --> Main["src/main.jsx (StrictMode)"]
-    Main --> App["src/App.jsx (Root Component)"]
+    Main --> App["src/App.jsx (Root Controller)"]
 
     App -->|user == null| Auth["<AuthPage onLogin={handleLogin} />"]
     App -->|user != null| AuthenticatedLayout["Authenticated View"]
@@ -58,12 +60,12 @@ flowchart TD
     AuthenticatedLayout --> Router{"activeTab Router"}
 
     Router -->|activeTab == 'pay'| Pay["<PayPage user={user} />"]
-    Router -->|activeTab == 'my-payments'| MyPayments["<MyPaymentsPage user={user} />"]
+    Router -->|activeTab == 'my-payments'| MyPayments["<MyPaymentsPage user={user} onNavigateToPay={...} />"]
     Router -->|activeTab == 'admin'| Admin["<AdminPanel user={user} />"]
 
-    subgraph API["Backend Communication (/src/api.js)"]
+    subgraph API["Backend API Calls (/src/api.js)"]
         Auth -.->|POST /api/user/login<br/>POST /api/user/register| ServerAPI[(Express REST API)]
-        Pay -.->|POST /api/order/pay| ServerAPI
+        Pay -.->|POST /api/order/stripe| ServerAPI
         MyPayments -.->|GET /api/order/payments?userId=...| ServerAPI
         Admin -.->|GET /api/order/all?adminEmail=...| ServerAPI
     end
@@ -73,228 +75,175 @@ flowchart TD
 
 ## 💾 Application State & Session Management
 
-Session data is managed within [`App.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/App.jsx) and synchronized directly with the browser's `localStorage` under the key `'assignment_user'`.
+Session state is managed within [`App.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/App.jsx) and synchronized with `localStorage` under the key `'assignment_user'`.
 
 ### User Object Schema
 ```typescript
 interface User {
-  id: string;        // User unique identifier
-  name: string;      // User's full name
-  email: string;     // Normalized lowercase email address
-  role: 'user' | 'admin'; // Authorization tier
+  id: number | string;  // Unique user ID in MySQL
+  _id: string;          // Stringified identifier for compatibility
+  name: string;         // Full name
+  email: string;        // Normalized lowercase email
+  role: 'user' | 'admin';
 }
 ```
 
-### State Synchronization Lifecycle
-1. **App Mount**: `useState` initializes by reading `'assignment_user'` from `localStorage`. If JSON parsing fails or the key is absent, it safely initializes to `null`.
-2. **Login / Register**: `handleLogin(userData)` stores the payload in React state and writes the serialized JSON string to `localStorage`.
-3. **Logout**: `handleLogout()` clears state to `null`, removes `'assignment_user'` from `localStorage`, and resets the active tab back to `'pay'`.
+### Stripe Redirect Lifecycle
+In `App.jsx`, a `useEffect` hook monitors URL paths upon mount:
+- **Success (`/payment/success`)**: Switches the view to `'my-payments'`, triggers a success notification banner, and cleans the URL via `window.history.replaceState`.
+- **Cancel (`/payment/cancel`)**: Keeps the user on `'pay'`, displays a cancellation alert, and resets the URL path.
 
 ---
 
 ## 🔍 In-Depth Component Breakdown
 
-### 1. `App.jsx` (Root Controller)
+### 1. `App.jsx` (Root Controller & Stripe Redirects)
 - **Path**: [`src/App.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/App.jsx)
+- **Styling**: [`src/App.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/App.css)
 - **Responsibilities**:
-  - Serves as the root orchestrator.
-  - Implements the top-level authentication guard: if `user === null`, renders `<AuthPage />`, otherwise renders the authenticated layout.
-  - Controls tab routing via the `activeTab` state (`'pay'` | `'my-payments'` | `'admin'`).
-  - Provides callbacks (`onLogin`, `onLogout`) down to child components.
+  - Top-level authentication barrier (renders `<AuthPage />` if unauthenticated).
+  - Maintains `activeTab` (`'pay'`, `'my-payments'`, or `'admin'`).
+  - Intercepts Stripe return routes (`/payment/success` and `/payment/cancel`).
+  - Renders dismissible alert banners.
 
 ---
 
 ### 2. `Navbar.jsx` (Header & Navigation)
 - **Path**: [`src/components/Navbar.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/Navbar.jsx)
-- **Props**:
-  - `activeTab` *(string)*: Current tab identifier.
-  - `setActiveTab` *(function)*: Tab switching callback.
-  - `user` *(object)*: Current user object.
-  - `onLogout` *(function)*: Logout trigger.
+- **Styling**: [`src/components/Navbar.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/Navbar.css)
+- **Props**: `activeTab`, `setActiveTab`, `user`, `onLogout`
 - **Key Behaviors**:
-  - **Dynamic Admin Tab**: Checks `user?.email?.toLowerCase() === ADMIN_EMAIL`. If true, displays a specialized gold-bordered `"Admin Panel"` navigation tab.
-  - **Role Badge**: Injects an `<span className="badge-admin">Admin</span>` tag next to the user's name when an admin profile is active.
-  - **Brand Navigation**: Clicking `"Assignment Pay"` navigates directly back to the `'pay'` tab.
-  - **Clean Logout**: Dedicated `"Sign out"` button with hover states.
+  - **Dynamic Admin Tab**: Displays the "Admin Panel" tab with an accent badge if `user.email === ADMIN_EMAIL`.
+  - **User Profile Pill**: Displays the user's initial and name, with an `"Admin"` chip for administrative accounts.
+  - **Brand Return**: Clicking `"Assignment Pay"` logo routes back to the `'pay'` tab.
+  - **Sign Out Action**: Cleans user state and storage with visual confirmation.
 
 ---
 
 ### 3. `AuthPage.jsx` (Authentication Portal)
 - **Path**: [`src/components/AuthPage.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/AuthPage.jsx)
-- **Props**:
-  - `onLogin` *(function)*: Callback invoked with user payload upon successful authentication.
+- **Styling**: [`src/components/AuthPage.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/AuthPage.css)
+- **Props**: `onLogin(userData)`
 - **Key Features**:
-  - **Dual-Mode Toggle**: Single view toggling between **Sign In** and **Create an Account** (Register) without page reloads.
-  - **Form Validation**: Validates full name (for registration), email format, and password fields.
-  - **Demo Admin Autofill**: Includes an **"Autofill (satyam@gmail.com)"** button. One click switches to Sign In mode and instantly fills the administrative email (`satyam@gmail.com`) and default password (`Satyam@62`) for quick reviewer evaluation.
-  - **API Integration**:
-    - Sign In &rarr; `POST ${API_URL}/api/user/login`
-    - Register &rarr; `POST ${API_URL}/api/user/register`
-  - **Feedback Notifications**: Displays descriptive error and loading alerts inline.
+  - Seamless toggle between **Sign In** and **Create an Account**.
+  - **Autofill Button**: One-click autofill for the admin reviewer account (`satyam@gmail.com` / `Satyam@62`).
+  - Inline error alerts displaying concise messages directly from the server.
+  - Form validation with clean visual focus states.
 
 ---
 
-### 4. `PayPage.jsx` (Payment Processing)
+### 4. `PayPage.jsx` (Stripe Checkout & Currencies)
 - **Path**: [`src/components/PayPage.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/PayPage.jsx)
-- **Props**:
-  - `user` *(object)*: Active user session data.
+- **Styling**: [`src/components/PayPage.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/PayPage.css)
+- **Props**: `user`
 - **Key Features**:
-  - **Quick Amount Presets**: Provides clickable badge buttons for standard amounts: **\$20**, **\$50**, **\$60**, and **\$100**. Clicking any preset updates the active selection and the input field.
-  - **Custom Amount Input**: Number input with `min="1"` and `step="any"` allowing arbitrary decimal currency inputs.
-  - **Payment Dispatch**: Submits a POST payload to `${API_URL}/api/order/pay`:
-    ```json
-    {
-      "userId": "...",
-      "userName": "...",
-      "amount": 50,
-      "currency": "usd"
-    }
-    ```
-  - **Transaction Feedback**: Shows instant success feedback with recorded amounts or detailed error alerts if connection drops or inputs are invalid.
-  - **Button State Management**: Changes submit button text dynamically to `"Processing..."` and disables click interactions during inflight requests.
+  - **Stripe Mode Only**: Directly initiates a Stripe checkout session via `POST /api/order/stripe`.
+  - **Supported Currencies**: Clean pill toggle between **USD ($)** and **Rupees (₹ / INR)**.
+  - **Dynamic Prefix**: Input prefix and action button text automatically adjust to `$ ` or `₹ `.
+  - **Optional Note**: Field allowing customers to specify payment purposes.
+  - **Safe Fallback**: Connects smoothly whether using live Stripe keys or local simulation.
+  - **Encrypted Checkout Notice**: Displays security reassurance with lock and shield icons.
 
 ---
 
-### 5. `MyPaymentsPage.jsx` (Personal Order History)
+### 5. `MyPaymentsPage.jsx` (History & Receipt Download)
 - **Path**: [`src/components/MyPaymentsPage.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/MyPaymentsPage.jsx)
-- **Props**:
-  - `user` *(object)*: Current user context (`user.id`).
+- **Styling**: [`src/components/MyPaymentsPage.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/MyPaymentsPage.css)
+- **Props**: `user`, `onNavigateToPay`
 - **Key Features**:
-  - **Lifecycle Querying**: Triggered automatically on component mount and whenever `user.id` changes.
-  - **Endpoint**: `GET ${API_URL}/api/order/payments?userId=${user.id}`.
-  - **Data Display**:
-    - **Date**: Formatted via `toLocaleDateString()`.
-    - **Amount**: Bold currency notation (`$X`).
-    - **Status Badge**: Context-aware color styling (`paid`, `pending`, `failed`, `completed`).
-    - **Transaction ID**: Monospaced code block displaying the payment record ID (`_id`).
-  - **Empty & Loading States**: Clean indicators for `"Loading..."` or `"No payments found."`.
-  - **Manual Refresh**: Includes a `"Refresh"` button in the card header for on-demand synchronization.
+  - Automatic query on mount: `GET /api/order/payments?userId=${user.id}`.
+  - **Search Bar**: Instant filtering by Order ID, Transaction ID, Amount, or Status.
+  - **Status Filter**: Toggle between `All`, `Paid`, `Pending`, and `Failed`.
+  - **One-Click Receipt Download**: Clicking the download button produces a formatted `.txt` payment receipt named `Receipt_<orderId>.txt`.
+  - **Manual Refresh**: Reload button with animated rotation during requests.
+  - **Empty State**: Direct link to make the first payment when no orders exist.
 
 ---
 
-### 6. `AdminPanel.jsx` (Analytics & Management)
+### 6. `AdminPanel.jsx` (Analytics, Volumes & CSV Export)
 - **Path**: [`src/components/AdminPanel.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/AdminPanel.jsx)
-- **Props**:
-  - `user` *(object)*: Logged-in administrator profile.
+- **Styling**: [`src/components/AdminPanel.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/AdminPanel.css)
+- **Props**: `user`
 - **Key Features**:
-  - **Access Gate**: Immediately renders an `"Access Denied"` card if `user.email` does not match `ADMIN_EMAIL`.
-  - **Administrative Fetching**: Calls `GET ${API_URL}/api/order/all?adminEmail=...` with the `x-admin-email` request header.
-  - **Real-Time KPI Metrics**:
-    - **Total Revenue**: Accrues amounts for all transactions marked as `'paid'` or `'completed'`:
-      ```javascript
-      const totalRev = payments
-        .filter((p) => p.status === 'paid' || p.status === 'completed')
-        .reduce((sum, p) => sum + (Number(p.amount) || 0), 0)
-      ```
-    - **Total Transactions**: Total array count of platform records.
-  - **Live Filter / Search**: Case-insensitive instant filtering across:
-    - Customer Name (`userName`)
-    - Customer User ID (`userId`)
-    - Payment Record ID (`_id`)
-  - **Comprehensive Transaction Table**: Columns for Date, User Name, User ID, Amount, Status Badge, and Transaction ID.
+  - **Access Restriction**: Hard check against `ADMIN_EMAIL` (`satyam@gmail.com`).
+  - **Executive KPI Cards**:
+    - **Total Transactions**: Total number of orders placed.
+    - **USD Revenue**: Accrued volume of all completed USD ($) transactions.
+    - **Rupees Revenue**: Accrued volume of all completed INR (₹) transactions.
+    - **Success Rate**: Calculated percentage of completed transactions.
+  - **Multi-Field Search**: Filters by Customer Name, User ID, Transaction ID, and Order ID.
+  - **Status Tabs**: Quick filtering across `All`, `Paid`, `Pending`, and `Failed`.
+  - **CSV Export**: Instant download of `Transactions_YYYY-MM-DD.csv` containing complete order details.
+
+---
+
+### 7. `icons.jsx` (Vector SVG Icon Suite)
+- **Path**: [`src/components/icons.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/icons.jsx)
+- **Key Features**:
+  - Zero external icon dependencies.
+  - Clean inline vector SVG implementations:
+    - `IconCreditCard`, `IconRefresh`, `IconSearch`, `IconDownload`, `IconShield`, `IconCheck`, `IconAlert`, `IconUser`, `IconArrowRight`, `IconLock`.
+  - Configurable `size`, `color`, and `className` props (e.g. `className="spin"` for loading states).
+
+---
+
+## 🎨 Design System & Modular CSS Architecture
+
+Styles are cleanly divided into separate files for each component:
+
+| Component | CSS File | Styling Focus |
+| :--- | :--- | :--- |
+| `main.jsx` | `src/index.css` | Typography, color variables, button styles, status pills, animations |
+| `App.jsx` | `src/App.css` | App container, max-width wrapper, alert notification bars |
+| `Navbar.jsx` | `src/components/Navbar.css` | Header bar, navigation tabs, user initials avatar, sign-out button |
+| `AuthPage.jsx` | `src/components/AuthPage.css` | Auth card, toggle buttons, form inputs, autofill demo pill |
+| `PayPage.jsx` | `src/components/PayPage.css` | Payment card, currency toggle pills, amount prefix, security notice |
+| `MyPaymentsPage.jsx` | `src/components/MyPaymentsPage.css` | Filter bar, search input, modern table, receipt download button |
+| `AdminPanel.jsx` | `src/components/AdminPanel.css` | KPI cards, USD/INR volumes, search controls, CSV export button |
 
 ---
 
 ## 🌐 API Layer & Configuration (`api.js`)
 
-Central configuration module located at [`src/api.js`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/api.js):
+Located at [`src/api.js`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/api.js):
 
 ```javascript
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 export const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'satyam@gmail.com'
 ```
 
-### Variables Explained
-| Variable | Fallback Default | Description |
-| :--- | :--- | :--- |
-| `VITE_API_URL` | `http://localhost:8000` | Backend API root URL consumed by all `fetch` requests |
-| `VITE_ADMIN_EMAIL` | `satyam@gmail.com` | Email recognized by UI for unlocking admin tabs and panels |
-
----
-
-## 🎨 Design System & Modular CSS Architecture
-
-Styling is cleanly modularized by component matching each JSX file, eliminating monolithic CSS bloat and enabling isolated style maintainability:
-
-| Component JSX | Dedicated CSS | Key Responsibilities |
-| :--- | :--- | :--- |
-| [`main.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/main.jsx) | [`src/index.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/index.css) | Global `:root` tokens, typography, resets, animations, status badges, spinners |
-| [`App.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/App.jsx) | [`src/App.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/App.css) | Root layout (`.app-root`, `.main-content`), `.card-elevated`, shared modal dialog shell |
-| [`Navbar.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/Navbar.jsx) | [`src/components/Navbar.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/Navbar.css) | Frosted header, brand lockup, navigation pills, user profile initials avatar, logout button |
-| [`AuthPage.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/AuthPage.jsx) | [`src/components/AuthPage.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/AuthPage.css) | Ambient glowing blur orbs, auth cards, form groups, password eye toggle, demo autofill pill |
-| [`PayPage.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/PayPage.jsx) | [`src/components/PayPage.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/PayPage.css) | Method selector cards, currency pills, preset amount chips, live fee sidebar, celebration receipt |
-| [`MyPaymentsPage.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/MyPaymentsPage.jsx) | [`src/components/MyPaymentsPage.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/MyPaymentsPage.css) | Activity stats cards, search input, status filters, modern interactive table, empty & loading states |
-| [`AdminPanel.jsx`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/AdminPanel.jsx) | [`src/components/AdminPanel.css`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/components/AdminPanel.css) | Live system badge, financial KPI metric cards, CSV report export, customer avatar cells, access guard |
-
-### Visual Tokens & Color Palette (`index.css`)
-- **Primary Indigo**: `#4f46e5` / `#4338ca` (Interactive buttons, focused borders, active tabs)
-- **Accent Cyan**: `#06b6d4` / `#ecfeff` (Direct transfer badges, live indicators)
-- **Canvas Background**: `#f8fafc` (Clean contemporary background)
-- **Card Background**: `#ffffff` (Elevated cards with smooth borders and layered drop shadows)
-- **Status Colors**:
-  - `paid` / `completed` / `success`: Background `#d1fae5`, text `#065f46` (Emerald green)
-  - `pending`: Background `#fef3c7`, text `#92400e` (Amber)
-  - `failed` / `error`: Background `#fee2e2`, text `#991b1b` (Crimson)
-
----
-
-## 📦 Public Assets & Static Resources
-
-```text
-Frontend/
-├── public/
-│   ├── favicon.svg      # Vector SVG favicon for browser tab
-│   ├── icons.svg        # Scalable application iconography
-│   └── images.png       # High-resolution raster brand mark
-└── src/
-    └── assets/
-        ├── hero.png     # Graphic asset for presentation
-        ├── react.svg    # Official React framework logo
-        └── vite.svg     # Official Vite logo
-```
-
 ---
 
 ## 📋 Component Props & State Reference
 
-| Component | Props Accepted | Internal State | Backend Endpoint Triggered |
+| Component | Props Accepted | State Variables | API Request |
 | :--- | :--- | :--- | :--- |
-| `<App />` | None | `user`, `activeTab` | None (reads/writes `localStorage`) |
-| `<Navbar />` | `activeTab`, `setActiveTab`, `user`, `onLogout` | Derived: `isAdmin` | None |
+| `<App />` | None | `user`, `activeTab`, `notification` | None (`localStorage` sync) |
+| `<Navbar />` | `activeTab`, `setActiveTab`, `user`, `onLogout` | None (derived `isAdmin`) | None |
 | `<AuthPage />` | `onLogin(userData)` | `isRegister`, `form`, `status`, `loading` | `POST /api/user/login`<br/>`POST /api/user/register` |
-| `<PayPage />` | `user` | `amount`, `loading`, `status` | `POST /api/order/pay` |
-| `<MyPaymentsPage />`| `user` | `payments`, `loading`, `error` | `GET /api/order/payments?userId=...` |
-| `<AdminPanel />` | `user` | `payments`, `loading`, `error`, `search` | `GET /api/order/all?adminEmail=...` |
+| `<PayPage />` | `user` | `amount`, `currency`, `note`, `loading`, `status` | `POST /api/order/stripe` |
+| `<MyPaymentsPage />` | `user`, `onNavigateToPay` | `payments`, `loading`, `error`, `filterStatus`, `search` | `GET /api/order/payments?userId=...` |
+| `<AdminPanel />` | `user` | `payments`, `loading`, `error`, `filterStatus`, `search` | `GET /api/order/all?adminEmail=...` |
 
 ---
 
 ## 🛠 Developer Workflow & Scripts
 
-All commands are executed from the `Frontend` directory:
+Execute from the `Frontend` directory:
 
-### 1. Development Mode (with HMR)
 ```bash
+# Start Vite development server (port 5173)
 npm run dev
-```
-Starts the local development server at `http://localhost:5173`. Hot module replacement updates components instantaneously without losing state.
 
-### 2. Production Build
-```bash
+# Build for production (outputs to dist/)
 npm run build
-```
-Compiles and bundles JSX and assets into the highly optimized static folder `dist/`.
 
-### 3. Build Preview
-```bash
+# Preview production build locally
 npm run preview
-```
-Runs a local web server serving the compiled `dist/` production build to verify bundle performance and routing.
 
-### 4. Code Quality & Linting
-```bash
+# Run ESLint quality checks
 npm run lint
 ```
-Executes ESLint across all `.js`, `.jsx` files checking for syntax errors, unused variables, and React Hooks dependency rule violations.
 
 ---
 
@@ -305,68 +254,70 @@ Executes ESLint across all `.js`, `.jsx` files checking for syntax errors, unuse
 [User Opens App]
        │
        ▼
-[AuthPage Rendered]
+[AuthPage Displayed]
        │
-       ├─► Option A: Fill Name, Email, Password -> Click "Register"
+       ├─► Option A: Fill Name, Email, Password -> Click "Create Account"
        │
        ├─► Option B: Click "Autofill (satyam@gmail.com)" -> Click "Sign In"
        │
        ▼
-[Backend Validates & Issues JWT]
+[Backend Validates & Returns User + JWT]
        │
        ▼
-[App saves user to localStorage & switches to Navbar + PayPage]
+[User stored in localStorage -> Redirect to PayPage]
 ```
 
-### Flow 2: Making a Payment
+### Flow 2: Stripe Payment
 ```text
 [User on PayPage]
        │
-       ├─► Click preset ($20 / $50 / $60 / $100) OR enter custom amount
+       ├─► Select Currency: USD ($) or Rupees (₹)
+       ├─► Enter Amount (e.g., 50.00)
+       ├─► (Optional) Enter Note
        │
        ▼
-[Click "Pay $X"]
+[Click "Pay $50 with Stripe"]
        │
-       ▼ (Button switches to "Processing...")
-[POST to /api/order/pay]
+       ▼ (Button switches to "Redirecting to Stripe...")
+[POST /api/order/stripe]
        │
        ▼
-[Success alert displayed: "Payment of $X successful! Recorded in database."]
+[Redirect to Stripe Checkout (or Simulated Local Checkout URL)]
+       │
+       ▼ (Payment Completed)
+[Redirect back to /payment/success]
+       │
+       ▼
+[App switches to MyPaymentsPage with success confirmation banner]
 ```
 
-### Flow 3: Viewing & Searching in Admin Panel
+### Flow 3: Admin Review & CSV Export
 ```text
 [Admin logs in as satyam@gmail.com]
        │
        ▼
-[Navbar highlights "Admin Panel" tab]
+[Navbar shows "Admin Panel" tab]
        │
        ▼
 [AdminPanel loads all transactions]
        │
-       ├─► View Total Revenue and Total Transaction count
-       │
-       └─► Type in Search Bar -> Instant table filter by name, userId, or paymentId
+       ├─► View Total Transactions, USD Revenue, Rupees Revenue & Success Rate
+       ├─► Search by Customer, User ID, or Order ID
+       ├─► Filter by status (Paid, Pending, Failed)
+       └─► Click "Export CSV" -> Downloads Transactions_YYYY-MM-DD.csv
 ```
 
 ---
 
 ## ❓ Troubleshooting & FAQs
 
-### 1. Getting `"Cannot connect to backend server"`
-- Ensure the backend Node server is running on `http://localhost:8000`.
-- Verify that `Frontend/.env` contains `VITE_API_URL=http://localhost:8000`.
-- If running on a different port, update both `Frontend/.env` and the CORS configuration in `Backend/server.js`.
+### 1. `Server unreachable` error
+- Verify the backend server is running on `http://localhost:8000`.
+- Verify `Frontend/.env` contains `VITE_API_URL=http://localhost:8000`.
 
-### 2. Admin Panel tab is not visible in the Navbar
-- Confirm you are logged in with the email `satyam@gmail.com`.
-- Verify `VITE_ADMIN_EMAIL` in `Frontend/.env` matches `satyam@gmail.com`.
-- You can use the **Autofill** button on the sign-in page to ensure exact case and spelling.
+### 2. Admin Panel tab is not visible
+- Ensure your logged-in account email matches `satyam@gmail.com` exactly.
+- Use the **Autofill (satyam@gmail.com)** button on the sign-in form.
 
-### 3. Session lost after closing browser
-- The app utilizes `localStorage.setItem('assignment_user', ...)`. Ensure your browser does not have storage disabled or in private browsing settings that clear storage immediately.
-
----
-
-## 🔗 Related Documentation
-- 📖 [System Root Documentation (Architecture, Backend APIs, Stripe)](../README.md)
+### 3. Stripe checkout shows simulation
+- If your `Backend/.env` has `STRIPE_MOCK=true` or lacks a valid secret key starting with `sk_test_`, the system automatically simulates checkout so you can test complete end-to-end payment flows without errors.
