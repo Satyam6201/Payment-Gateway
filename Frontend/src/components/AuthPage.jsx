@@ -47,7 +47,7 @@ export default function AuthPage({ onLogin }) {
     <div className="simple-auth-wrapper">
       <div className="simple-auth-card">
         <div className="auth-header">
-          <h1 className="auth-brand">AssignmentPay</h1>
+          <h1 className="auth-brand">Stripe Pay</h1>
           <h2 className="auth-title">{isRegister ? 'Create Account' : 'Sign In'}</h2>
           <p className="auth-sub">
             {isRegister ? 'Register to start sending payments' : 'Enter your credentials to continue'}

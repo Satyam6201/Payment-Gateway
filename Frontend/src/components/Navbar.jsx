@@ -10,7 +10,7 @@ export default function Navbar({ activeTab, setActiveTab, user, onLogout }) {
     <header className="simple-navbar">
       <div className="navbar-inner">
         <div className="navbar-brand" onClick={() => setActiveTab('pay')}>
-          Assignment<span className="brand-accent">Pay</span>
+          Stripe<span className="brand-accent">  Pay</span>
         </div>
 
         <nav className="navbar-nav">
