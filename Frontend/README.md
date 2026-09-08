@@ -1,4 +1,4 @@
-# 💻 Assignment Pay - Frontend Application Deep Dive
+# 💻 Stripe Pay - Frontend Application Deep Dive
 
 [![React](https://img.shields.io/badge/React-19.2.8-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-8.2.2-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
@@ -6,7 +6,7 @@
 [![CSS3](https://img.shields.io/badge/CSS3-Modular_Component_CSS-1572B6?style=for-the-badge&logo=css3&logoColor=white)](https://www.w3.org/TR/CSS/)
 [![ESLint](https://img.shields.io/badge/ESLint-10.x-4B32C3?style=for-the-badge&logo=eslint&logoColor=white)](https://eslint.org/)
 
-This document provides a comprehensive, component-by-component, and architectural breakdown of the **Assignment Pay** frontend client. It covers state management, UI component trees, modular per-component styling architecture, Stripe-only checkout flow, API interactions, and developer workflows.
+This document provides a comprehensive, component-by-component, and architectural breakdown of the **Stripe Pay** frontend client. It covers state management, UI component trees, modular per-component styling architecture, Stripe-only checkout flow, API interactions, and developer workflows.
 
 ---
 

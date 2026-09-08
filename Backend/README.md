@@ -1,4 +1,4 @@
-# ⚙️ Assignment Pay - Backend API Server
+# ⚙️ Stripe Pay - Backend API Server
 
 [![Node.js](https://img.shields.io/badge/Node.js-v18+-68A063?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Express.js](https://img.shields.io/badge/Express.js-5.x-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
@@ -6,7 +6,7 @@
 [![Sequelize](https://img.shields.io/badge/Sequelize-6.x-52B0E7?style=for-the-badge&logo=sequelize&logoColor=white)](https://sequelize.org/)
 [![Stripe](https://img.shields.io/badge/Stripe-API-635BFF?style=for-the-badge&logo=stripe&logoColor=white)](https://stripe.com/)
 
-The backend REST API service for **Assignment Pay**. Built with **Express.js 5** (ES Modules) and **MySQL** via **Sequelize ORM**, providing robust authentication, payment processing with Stripe Checkout, automated database creation, and administrative analytics.
+The backend REST API service for **Stripe Pay**. Built with **Express.js 5** (ES Modules) and **MySQL** via **Sequelize ORM**, providing robust authentication, payment processing with Stripe Checkout, automated database creation, and administrative analytics.
 
 ---
 

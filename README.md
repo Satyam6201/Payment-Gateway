@@ -1,4 +1,4 @@
-# 💳 Assignment Pay - Payment Gateway & Transaction Management System
+# 💳 Stripe Pay - Payment Gateway & Transaction Management System
 
 [![Node.js](https://img.shields.io/badge/Node.js-v18+-68A063?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Express.js](https://img.shields.io/badge/Express.js-5.x-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
@@ -45,7 +45,7 @@ A clean, modern, full-stack payment processing, customer transaction history, an
 
 ## 🌟 Overview
 
-**Assignment Pay** delivers an intuitive, secure, and clean payment workflow tailored for real-world e-commerce interactions:
+**Stripe Pay** delivers an intuitive, secure, and clean payment workflow tailored for real-world e-commerce interactions:
 
 1. **User Authentication & Session Management**: Secure user onboarding, login, password encryption via `bcryptjs`, and JSON Web Token (JWT) state management with HTTP-only cookies.
 2. **Simplified Stripe Checkout**: Streamlined payment interface exclusively using Stripe Checkout with real-time currency switching between **USD ($)** and **Rupees (₹ / INR)**.
@@ -447,7 +447,7 @@ Base URL: `http://localhost:8000`
   ```json
   {
     "status": "ok",
-    "message": "Assignment Payment API is running"
+    "message": "Stripe Payment API is running"
   }
   ```
 
