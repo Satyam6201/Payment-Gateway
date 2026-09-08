@@ -38,7 +38,7 @@ app.use("/api/payment", paymentRouter);
 // Centralized error handler
 app.use((err, req, res, next) => {
     console.error("Internal Server Error:", err.stack || err);
-    return res.status(500).json({ success: false, message: "Internal server error. Please try again later." });
+    return res.status(500).json({ success: false, message: "Internal server error" });
 });
 
 // Bootstrap server

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { API_URL, ADMIN_EMAIL } from '../api'
-import { IconShield, IconSparkles, IconEye, IconEyeOff, IconCheck, IconArrowRight } from './icons'
+import { IconEye, IconEyeOff, IconRefresh } from './icons'
 import './AuthPage.css'
 
 export default function AuthPage({ onLogin }) {
@@ -15,7 +15,7 @@ export default function AuthPage({ onLogin }) {
   const fillAdmin = () => {
     setIsRegister(false)
     setForm({ name: '', email: ADMIN_EMAIL, password: 'Satyam@62' })
-    setStatus({ type: 'info', text: 'Admin demo credentials filled! Click "Sign In" below.' })
+    setStatus({ type: 'info', text: 'Demo credentials filled.' })
   }
 
   const handleSubmit = async (e) => {
@@ -32,156 +32,122 @@ export default function AuthPage({ onLogin }) {
       })
       const data = await res.json()
       if (!data.success) {
-        setStatus({ type: 'error', text: data.message || 'Authentication failed. Please check credentials.' })
+        setStatus({ type: 'error', text: data.message || 'Authentication failed.' })
         return
       }
       onLogin(data.user)
     } catch {
-      setStatus({ type: 'error', text: 'Unable to connect to backend server. Make sure the server is running.' })
+      setStatus({ type: 'error', text: 'Server unreachable.' })
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="auth-page-wrapper">
-      {/* Background Decorative Gradient Orbs */}
-      <div className="ambient-orb orb-1"></div>
-      <div className="ambient-orb orb-2"></div>
-
-      <div className="auth-card-modern">
-        {/* Card Header */}
+    <div className="simple-auth-wrapper">
+      <div className="simple-auth-card">
         <div className="auth-header">
-          <div className="auth-brand-badge">
-            <IconSparkles size={16} />
-            <span>Assignment Pay</span>
-          </div>
-
-          <h1 className="auth-title">
-            {isRegister ? 'Create Your Account' : 'Welcome Back'}
-          </h1>
-          <p className="auth-subtitle">
-            {isRegister
-              ? 'Create an account to start sending & managing seamless payments.'
-              : 'Sign in to access your transactions, cards, and analytics.'}
+          <h1 className="auth-brand">AssignmentPay</h1>
+          <h2 className="auth-title">{isRegister ? 'Create Account' : 'Sign In'}</h2>
+          <p className="auth-sub">
+            {isRegister ? 'Register to start sending payments' : 'Enter your credentials to continue'}
           </p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="form-modern">
-          {isRegister && (
-            <div className="input-group">
-              <label htmlFor="name">Full Name</label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                placeholder="e.g. Alex Johnson"
-                value={form.name}
-                onChange={handleChange}
-                required
-                autoComplete="name"
-              />
-            </div>
-          )}
-
-          <div className="input-group">
-            <label htmlFor="email">Email Address</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="you@example.com"
-              value={form.email}
-              onChange={handleChange}
-              required
-              autoComplete="email"
-            />
-          </div>
-
-          <div className="input-group">
-            <div className="label-flex">
-              <label htmlFor="password">Password</label>
-              <button
-                type="button"
-                className="btn-toggle-pw"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex="-1"
-              >
-                {showPassword ? <IconEyeOff size={15} /> : <IconEye size={15} />}
-                <span>{showPassword ? 'Hide' : 'Show'}</span>
-              </button>
-            </div>
-            <div className="input-pw-wrapper">
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="At least 6 characters"
-                value={form.password}
-                onChange={handleChange}
-                required
-                autoComplete={isRegister ? 'new-password' : 'current-password'}
-              />
-            </div>
-          </div>
-
-          <button type="submit" className="btn-modern-primary" disabled={loading}>
-            {loading ? (
-              <span className="spinner-wrap">
-                <span className="mini-spinner"></span>
-                <span>Connecting...</span>
-              </span>
-            ) : (
-              <span className="btn-content">
-                <span>{isRegister ? 'Create Account' : 'Sign In'}</span>
-                <IconArrowRight size={16} />
-              </span>
-            )}
-          </button>
-        </form>
-
-        {/* Demo Pill */}
-        <div className="demo-box-modern">
-          <div className="demo-text">
-            <span className="demo-title">Exploring the Platform?</span>
-            <span className="demo-desc">Instant access to the admin analytics hub.</span>
-          </div>
-          <button type="button" className="btn-demo-autofill" onClick={fillAdmin}>
-            <IconSparkles size={14} />
-            <span>Fill Demo Admin</span>
-          </button>
-        </div>
-
-        {/* Status Notification */}
         {status && (
-          <div className={`status-banner ${status.type}`}>
-            {status.type === 'error' && <span className="status-dot error"></span>}
-            {status.type === 'info' && <span className="status-dot info"></span>}
+          <div className={`auth-alert ${status.type}`}>
             <span>{status.text}</span>
           </div>
         )}
 
-        {/* Mode Switcher */}
-        <div className="auth-footer-toggle">
+        <form onSubmit={handleSubmit} className="auth-form">
+          {isRegister && (
+            <div className="auth-field">
+              <label htmlFor="name" className="auth-label">Full Name</label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="Your Name"
+                value={form.name}
+                onChange={handleChange}
+                required
+                className="auth-input"
+              />
+            </div>
+          )}
+
+          <div className="auth-field">
+            <label htmlFor="email" className="auth-label">Email Address</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="name@example.com"
+              value={form.email}
+              onChange={handleChange}
+              required
+              className="auth-input"
+            />
+          </div>
+
+          <div className="auth-field">
+            <div className="auth-label-row">
+              <label htmlFor="password" className="auth-label">Password</label>
+              <button
+                type="button"
+                className="btn-toggle-eye"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <IconEyeOff size={14} /> : <IconEye size={14} />}
+                <span>{showPassword ? 'Hide' : 'Show'}</span>
+              </button>
+            </div>
+            <input
+              id="password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Enter password"
+              value={form.password}
+              onChange={handleChange}
+              required
+              className="auth-input"
+            />
+          </div>
+
+          <button type="submit" className="btn-auth-submit" disabled={loading}>
+            {loading ? (
+              <span className="auth-btn-loading">
+                <IconRefresh size={16} className="spin" />
+                <span>Please wait...</span>
+              </span>
+            ) : (
+              isRegister ? 'Create Account' : 'Sign In'
+            )}
+          </button>
+        </form>
+
+        {/* Demo Account Box */}
+        <div className="demo-box">
+          <span className="demo-hint">Need a demo admin account?</span>
+          <button type="button" className="btn-demo-fill" onClick={fillAdmin}>
+            Autofill Admin
+          </button>
+        </div>
+
+        {/* Switch mode */}
+        <div className="auth-switch">
           <span>{isRegister ? 'Already have an account?' : "Don't have an account?"}</span>
           <button
             type="button"
-            className="link-toggle"
+            className="btn-switch-mode"
             onClick={() => {
               setIsRegister(!isRegister)
               setStatus(null)
             }}
           >
-            {isRegister ? 'Sign in instead' : 'Create one now'}
+            {isRegister ? 'Sign in' : 'Register'}
           </button>
-        </div>
-
-        {/* Trust Badges */}
-        <div className="trust-footer">
-          <span className="trust-item"><IconShield size={13} /> 256-Bit Encrypted</span>
-          <span className="trust-dot">•</span>
-          <span className="trust-item"><IconCheck size={13} /> Verified Relational DB</span>
         </div>
       </div>
     </div>

@@ -26,7 +26,7 @@ export const register = async (req, res) => {
         if (!name || !email || !password) {
             return res.status(400).json({
                 success: false,
-                message: "Name, email, and password are required",
+                message: "All fields required",
             });
         }
 
@@ -36,7 +36,7 @@ export const register = async (req, res) => {
         if (existingUser) {
             return res.status(409).json({
                 success: false,
-                message: "A user with this email already exists",
+                message: "Email already registered",
             });
         }
 
@@ -62,7 +62,7 @@ export const register = async (req, res) => {
         console.error("Registration error:", error.message);
         return res.status(500).json({
             success: false,
-            message: "Server error during registration",
+            message: "Registration failed",
         });
     }
 };
@@ -74,7 +74,7 @@ export const login = async (req, res) => {
         if (!email || !password) {
             return res.status(400).json({
                 success: false,
-                message: "Email and password are required",
+                message: "Email and password required",
             });
         }
 
@@ -109,7 +109,7 @@ export const login = async (req, res) => {
         console.error("Login error:", error.message);
         return res.status(500).json({
             success: false,
-            message: "Server error during login",
+            message: "Login failed",
         });
     }
 };
@@ -125,7 +125,7 @@ export const logout = async (req, res) => {
         console.error("Logout error:", error.message);
         return res.status(500).json({
             success: false,
-            message: "Server error during logout",
+            message: "Logout failed",
         });
     }
 };
