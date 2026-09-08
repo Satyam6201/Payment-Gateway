@@ -27,7 +27,7 @@ app.use(express.json());
 
 // API health check
 app.get("/", (req, res) => {
-    return res.status(200).json({ status: "ok", message: "Assignment Payment API is operational" });
+    return res.status(200).json({ status: "ok", message: "Payment API is operational" });
 });
 
 // Application routes
@@ -46,7 +46,7 @@ const startServer = async () => {
     try {
         await db();
         app.listen(PORT, () => {
-            console.log(`Assignment Pay API running on http://localhost:${PORT}`);
+            console.log(`API running on http://localhost:${PORT}`);
         });
     } catch (err) {
         console.error("Failed to start server:", err.message);
