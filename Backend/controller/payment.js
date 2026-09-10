@@ -31,10 +31,10 @@ export const createPayment = async (req, res) => {
         const userName = req.body?.userName || req.userName;
         const { amount, currency = "usd" } = req.body || {};
 
-        if (!userId || !userName) {
+        if (!userId) {
             return res.status(400).json({
                 success: false,
-                message: "User details required",
+                message: "User ID required",
             });
         }
 
@@ -64,12 +64,12 @@ export const createPayment = async (req, res) => {
 
         const payment = await Payment.create({
             userId: numericUserId,
-            userName: userName.trim(),
             amount: numericAmount,
             currency: currency.toLowerCase().trim(),
             status: "paid",
             paidAt: new Date(),
         });
+        payment.dataValues.user = targetUser;
 
         return res.status(201).json({
             success: true,
@@ -104,6 +104,8 @@ export const placeOrderStripe = async (req, res) => {
             });
         }
 
+        const customerName = req.body.userName || targetUser.name || "Customer";
+
         const numericAmount = Number(amount);
         if (!numericAmount || numericAmount <= 0 || isNaN(numericAmount)) {
             return res.status(400).json({
@@ -121,7 +123,6 @@ export const placeOrderStripe = async (req, res) => {
             const mockSessionId = `cs_mock_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
             const payment = await Payment.create({
                 userId: numericUserId,
-                userName: userName.trim(),
                 orderId: safeOrderId,
                 amount: numericAmount,
                 currency: normalizedCurrency,
@@ -129,6 +130,7 @@ export const placeOrderStripe = async (req, res) => {
                 status: "paid",
                 paidAt: new Date(),
             });
+            payment.dataValues.user = targetUser;
 
             return res.json({
                 success: true,
@@ -170,7 +172,6 @@ export const placeOrderStripe = async (req, res) => {
 
         const payment = await Payment.create({
             userId: numericUserId,
-            userName: userName.trim(),
             orderId: safeOrderId,
             amount: numericAmount,
             currency: normalizedCurrency,
@@ -178,6 +179,7 @@ export const placeOrderStripe = async (req, res) => {
             stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : null,
             status: "pending",
         });
+        payment.dataValues.user = targetUser;
 
         return res.json({ success: true, url: session.url, payment });
     } catch (error) {
@@ -251,6 +253,7 @@ export const getUserPayments = async (req, res) => {
 
         const payments = await Payment.findAll({
             where: { userId: numericUserId },
+            include: [{ model: User, as: "user", attributes: ["name", "email"] }],
             order: [["createdAt", "DESC"]],
         });
 
@@ -273,6 +276,7 @@ export const getAllPayments = async (req, res) => {
         }
 
         const payments = await Payment.findAll({
+            include: [{ model: User, as: "user", attributes: ["name", "email"] }],
             order: [["createdAt", "DESC"]],
         });
 

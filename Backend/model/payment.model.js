@@ -17,10 +17,6 @@ const Payment = sequelize.define("Payment", {
             key: "id",
         },
     },
-    userName: {
-        type: DataTypes.STRING(255),
-        allowNull: false,
-    },
     amount: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
@@ -29,7 +25,7 @@ const Payment = sequelize.define("Payment", {
         },
     },
     currency: {
-        type: DataTypes.STRING(10),
+        type: DataTypes.STRING(3),
         allowNull: false,
         defaultValue: "usd",
         set(value) {
@@ -37,8 +33,8 @@ const Payment = sequelize.define("Payment", {
         },
     },
     status: {
-        type: DataTypes.ENUM("pending", "paid", "failed", "completed"),
-        defaultValue: "paid",
+        type: DataTypes.ENUM("pending", "paid", "failed"),
+        defaultValue: "pending",
         allowNull: false,
     },
     orderId: {
@@ -50,7 +46,6 @@ const Payment = sequelize.define("Payment", {
         type: DataTypes.STRING(255),
         allowNull: true,
         unique: true,
-        defaultValue: () => `direct_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`,
     },
     stripePaymentIntentId: {
         type: DataTypes.STRING(255),
@@ -58,17 +53,18 @@ const Payment = sequelize.define("Payment", {
     },
     paidAt: {
         type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW,
+        allowNull: true,
+        defaultValue: null,
     },
     failureMessage: {
-        type: DataTypes.TEXT,
+        type: DataTypes.STRING(500),
         allowNull: true,
     },
 }, {
     tableName: "payments",
     timestamps: true,
     indexes: [
-        { fields: ["userId"] },
+        { fields: ["orderId"] },
         { fields: ["status"] },
     ],
 });
@@ -77,7 +73,7 @@ const Payment = sequelize.define("Payment", {
 User.hasMany(Payment, { foreignKey: "userId", as: "payments", onDelete: "CASCADE" });
 Payment.belongsTo(User, { foreignKey: "userId", as: "user" });
 
-// Expose _id and string userId for frontend compatibility
+// Expose _id, string userId, and userName for frontend compatibility
 Payment.prototype.toJSON = function () {
     const values = { ...this.get() };
     if (values.id !== undefined) {
@@ -85,6 +81,9 @@ Payment.prototype.toJSON = function () {
     }
     if (values.userId !== undefined && values.userId !== null) {
         values.userId = String(values.userId);
+    }
+    if (!values.userName && values.user?.name) {
+        values.userName = values.user.name;
     }
     return values;
 };
