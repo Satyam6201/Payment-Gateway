@@ -249,21 +249,20 @@ Stores registered platform users and administrative credentials.
 | `updatedAt` | `DATETIME` | `NOT NULL`, `DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | Profile update timestamp |
 
 ### 2. `payments` Table
-Stores completed, pending, and failed payment transaction records.
+Stores completed, pending, and failed payment transaction records (normalized, linked to `users` table).
 
 | Column | Type | Constraints | Description |
 | :--- | :--- | :--- | :--- |
 | `id` | `INT` | `PRIMARY KEY`, `AUTO_INCREMENT` | Unique payment transaction record ID |
-| `userId` | `INT` | `NOT NULL`, `INDEX`, `FOREIGN KEY (users.id) ON DELETE CASCADE` | Associated user ID |
-| `userName` | `VARCHAR(255)` | `NOT NULL` | Customer name at time of payment |
+| `userId` | `INT` | `NOT NULL`, `FOREIGN KEY (users.id) ON DELETE CASCADE` | Associated user ID |
 | `amount` | `DECIMAL(10, 2)` | `NOT NULL` | Payment amount in currency units |
-| `currency` | `VARCHAR(10)` | `NOT NULL`, `DEFAULT 'usd'` | Currency code (`usd` or `inr`) |
-| `status` | `ENUM('pending', 'paid', 'failed', 'completed')` | `NOT NULL`, `DEFAULT 'paid'`, `INDEX` | Lifecycle status of the payment |
-| `orderId` | `VARCHAR(255)` | `NOT NULL` | System order reference |
+| `currency` | `VARCHAR(3)` | `NOT NULL`, `DEFAULT 'usd'` | Currency code (`usd` or `inr`) |
+| `status` | `ENUM('pending', 'paid', 'failed')` | `NOT NULL`, `DEFAULT 'pending'`, `INDEX` | Lifecycle status of the payment |
+| `orderId` | `VARCHAR(255)` | `NOT NULL`, `INDEX` | System order reference |
 | `stripeCheckoutSessionId` | `VARCHAR(255)` | `UNIQUE`, `NULLABLE` | Stripe Checkout Session ID |
 | `stripePaymentIntentId` | `VARCHAR(255)` | `NULLABLE` | Stripe Payment Intent ID |
-| `paidAt` | `DATETIME` | `DEFAULT CURRENT_TIMESTAMP` | Timestamp when payment completed |
-| `failureMessage` | `TEXT` | `NULLABLE` | Failure details or webhook error messages |
+| `paidAt` | `DATETIME` | `NULLABLE`, `DEFAULT NULL` | Timestamp when payment was confirmed paid |
+| `failureMessage` | `VARCHAR(500)` | `NULLABLE` | Failure details or webhook error messages |
 | `createdAt` | `DATETIME` | `NOT NULL`, `DEFAULT CURRENT_TIMESTAMP` | Record creation timestamp |
 | `updatedAt` | `DATETIME` | `NOT NULL`, `DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | Record update timestamp |
 
@@ -272,6 +271,7 @@ Sequelize models implement custom `toJSON()` serialization:
 - Automatically strips `password` from user responses.
 - Exposes `_id: String(this.id)` so React components referencing either `p.id` or `p._id` function smoothly.
 - Exposes `userId` as a string for safe client-side search and filtering operations.
+- Dynamically resolves `userName` from the associated `user` relation (`User.hasMany(Payment)` / `Payment.belongsTo(User)`), maintaining 100% compatibility with frontend components without storing redundant denormalized customer names.
 
 ---
 
