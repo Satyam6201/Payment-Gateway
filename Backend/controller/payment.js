@@ -85,7 +85,6 @@ export const createPayment = async (req, res) => {
 export const placeOrderStripe = async (req, res) => {
     try {
         const userId = req.userId || req.body.userId;
-        const userName = req.body.userName || "Customer";
         const { orderId, amount, currency = "usd" } = req.body;
 
         const numericUserId = Number(userId);
@@ -155,7 +154,7 @@ export const placeOrderStripe = async (req, res) => {
                 {
                     price_data: {
                         currency: normalizedCurrency,
-                        product_data: { name: `Payment from ${userName}` },
+                        product_data: { name: `Payment from ${customerName}` },
                         unit_amount: Math.round(numericAmount * 100),
                     },
                     quantity: 1,
@@ -165,7 +164,7 @@ export const placeOrderStripe = async (req, res) => {
             cancel_url: `${req.headers.origin || "http://localhost:5173"}/payment/cancel`,
             metadata: {
                 userId: numericUserId.toString(),
-                userName,
+                userName: customerName,
                 orderId: safeOrderId,
             },
         });
