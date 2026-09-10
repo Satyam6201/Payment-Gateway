@@ -48,7 +48,7 @@ The backend REST API service for **Stripe Pay**. Built with **Express.js 5** (ES
    - Fields: `id`, `name`, `email` (unique, lowercase), `password` (bcrypt hash), `role` (`user` | `admin`).
    - `toJSON()` strips passwords and provides `_id: String(id)`.
 2. **Payment (`model/payment.model.js`)**:
-   - Fields: `id`, `userId`, `amount`, `currency` (`usd` | `inr`), `status` (`pending`, `paid`, `failed`), `orderId`, `stripeCheckoutSessionId`, `stripePaymentIntentId`, `paidAt`, `failureMessage`.
+   - Fields: `id`, `userId`, `amount`, `currency` (`usd` | `inr`), `status` (`pending`, `paid`, `failed`), `orderId`, `stripeCheckoutSessionId`, `paidAt`, `failureMessage`.
    - Relationally linked to `users(id)` via `userId` foreign key.
    - Indexed on `orderId` and `status`.
    - `toJSON()` resolves `userName` dynamically from the associated user relationship for frontend backwards compatibility.

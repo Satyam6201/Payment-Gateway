@@ -175,7 +175,6 @@ export const placeOrderStripe = async (req, res) => {
             amount: numericAmount,
             currency: normalizedCurrency,
             stripeCheckoutSessionId: session.id,
-            stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : null,
             status: "pending",
         });
         payment.dataValues.user = targetUser;
@@ -214,7 +213,6 @@ export const stripeWebhook = async (req, res) => {
         await Payment.update(
             {
                 status: "paid",
-                stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : null,
                 paidAt: new Date(),
             },
             {
@@ -225,7 +223,6 @@ export const stripeWebhook = async (req, res) => {
         await Payment.update(
             {
                 status: "failed",
-                stripePaymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : null,
                 failureMessage: session.last_payment_error?.message || "Payment failed or session expired",
             },
             {

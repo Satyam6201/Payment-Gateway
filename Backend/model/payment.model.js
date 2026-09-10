@@ -47,10 +47,6 @@ const Payment = sequelize.define("Payment", {
         allowNull: true,
         unique: true,
     },
-    stripePaymentIntentId: {
-        type: DataTypes.STRING(255),
-        allowNull: true,
-    },
     paidAt: {
         type: DataTypes.DATE,
         allowNull: true,

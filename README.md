@@ -260,7 +260,6 @@ Stores completed, pending, and failed payment transaction records (normalized, l
 | `status` | `ENUM('pending', 'paid', 'failed')` | `NOT NULL`, `DEFAULT 'pending'`, `INDEX` | Lifecycle status of the payment |
 | `orderId` | `VARCHAR(255)` | `NOT NULL`, `INDEX` | System order reference |
 | `stripeCheckoutSessionId` | `VARCHAR(255)` | `UNIQUE`, `NULLABLE` | Stripe Checkout Session ID |
-| `stripePaymentIntentId` | `VARCHAR(255)` | `NULLABLE` | Stripe Payment Intent ID |
 | `paidAt` | `DATETIME` | `NULLABLE`, `DEFAULT NULL` | Timestamp when payment was confirmed paid |
 | `failureMessage` | `VARCHAR(500)` | `NULLABLE` | Failure details or webhook error messages |
 | `createdAt` | `DATETIME` | `NOT NULL`, `DEFAULT CURRENT_TIMESTAMP` | Record creation timestamp |
@@ -430,7 +429,7 @@ When connected to a live Stripe account:
 1. Stripe sends events to `POST /api/order/webhook`.
 2. The raw request body is verified against `STRIPE_WEBHOOK_SECRET` using `stripe.webhooks.constructEvent()`.
 3. Event handlers:
-   - `checkout.session.completed` &rarr; updates status to `paid` and saves `stripePaymentIntentId`.
+   - `checkout.session.completed` &rarr; updates status to `paid` and sets `paidAt`.
    - `checkout.session.async_payment_succeeded` &rarr; updates status to `paid`.
    - `checkout.session.async_payment_failed` / `expired` &rarr; updates status to `failed` and logs `failureMessage`.
 

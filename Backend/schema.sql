@@ -27,7 +27,6 @@ CREATE TABLE IF NOT EXISTS `payments` (
   `status` ENUM('pending', 'paid', 'failed') NOT NULL DEFAULT 'pending',
   `orderId` VARCHAR(255) NOT NULL,
   `stripeCheckoutSessionId` VARCHAR(255) NULL UNIQUE,
-  `stripePaymentIntentId` VARCHAR(255) NULL,
   `paidAt` DATETIME NULL DEFAULT NULL,
   `failureMessage` VARCHAR(500) NULL,
   `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
