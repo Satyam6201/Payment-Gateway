@@ -319,8 +319,8 @@ STRIPE_MOCK=false
 Create or update `Frontend/.env`:
 
 ```env
-# Backend API Base URL
-VITE_API_URL=http://localhost:8000
+# Backend API Base URL (Deployed on Render or http://localhost:8000 for local)
+VITE_API_URL=https://payment-gateway-7b2y.onrender.com
 
 # Administrator Email (enables Admin Panel navigation & authorization)
 VITE_ADMIN_EMAIL=satyam@gmail.com
@@ -437,7 +437,8 @@ When connected to a live Stripe account:
 
 ## 📡 REST API Reference
 
-Base URL: `http://localhost:8000`
+Base URL (Deployed): `https://payment-gateway-7b2y.onrender.com`  
+Base URL (Local): `http://localhost:8000`
 
 ### Health Check
 
@@ -681,8 +682,8 @@ The frontend employs a modular, human-readable architecture where each component
 - The database `payment_gateway` will be created automatically if your MySQL user has `CREATE` privileges.
 
 ### 3. `Server unreachable` in Frontend
-- Ensure the backend is running on `http://localhost:8000`.
-- Verify `VITE_API_URL=http://localhost:8000` in `Frontend/.env`.
+- Ensure the backend is running on `https://payment-gateway-7b2y.onrender.com` (or `http://localhost:8000` for local development).
+- Verify `VITE_API_URL=https://payment-gateway-7b2y.onrender.com` in `Frontend/.env`.
 
 ---
 
