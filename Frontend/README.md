@@ -10,6 +10,15 @@ This document provides a comprehensive, component-by-component, and architectura
 
 ---
 
+## 🌐 Live Deployments
+
+| Component | Service | Production URL |
+| :--- | :--- | :--- |
+| **Frontend Web App** | Vercel | [https://payment-gateway-bice-theta.vercel.app](https://payment-gateway-bice-theta.vercel.app/) |
+| **Backend REST API** | Render | [https://payment-gateway-7b2y.onrender.com](https://payment-gateway-7b2y.onrender.com/) |
+
+---
+
 ## 📑 Table of Contents
 
 - [Architectural Overview](#-architectural-overview)

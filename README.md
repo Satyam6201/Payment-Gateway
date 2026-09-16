@@ -13,6 +13,15 @@ A clean, modern, full-stack payment processing, customer transaction history, an
 
 ---
 
+## 🌐 Live Deployments
+
+| Component | Service | Production URL |
+| :--- | :--- | :--- |
+| **Frontend Web App** | Vercel | [https://payment-gateway-bice-theta.vercel.app](https://payment-gateway-bice-theta.vercel.app/) |
+| **Backend REST API** | Render | [https://payment-gateway-7b2y.onrender.com](https://payment-gateway-7b2y.onrender.com/) |
+
+---
+
 ## 📑 Table of Contents
 
 - [Overview](#-overview)
