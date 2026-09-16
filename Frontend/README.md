@@ -208,7 +208,8 @@ Styles are cleanly divided into separate files for each component:
 Located at [`src/api.js`](file:///c:/Users/satya/OneDrive/Desktop/Project/Assignment/Frontend/src/api.js):
 
 ```javascript
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const rawApiUrl = import.meta.env.VITE_API_URL || 'https://payment-gateway-7b2y.onrender.com'
+export const API_URL = rawApiUrl.replace(/\/$/, '')
 export const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'satyam@gmail.com'
 ```
 
@@ -312,8 +313,8 @@ npm run lint
 ## ❓ Troubleshooting & FAQs
 
 ### 1. `Server unreachable` error
-- Verify the backend server is running on `http://localhost:8000`.
-- Verify `Frontend/.env` contains `VITE_API_URL=http://localhost:8000`.
+- Verify the backend server is operational on `https://payment-gateway-7b2y.onrender.com` (or `http://localhost:8000` for local dev).
+- Verify `Frontend/.env` contains `VITE_API_URL=https://payment-gateway-7b2y.onrender.com`.
 
 ### 2. Admin Panel tab is not visible
 - Ensure your logged-in account email matches `satyam@gmail.com` exactly.
