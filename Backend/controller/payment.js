@@ -118,7 +118,7 @@ export const placeOrderStripe = async (req, res) => {
 
         // Local fallback when real Stripe is not configured
         if (!isRealStripeKey()) {
-            const origin = req.headers.origin || "http://localhost:5173";
+            const origin = req.headers.origin || (process.env.CLIENT_URL ? process.env.CLIENT_URL.replace(/\/$/, '') : "https://payment-gateway-bice-theta.vercel.app");
             const mockSessionId = `cs_mock_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
             const payment = await Payment.create({
                 userId: numericUserId,
@@ -160,8 +160,8 @@ export const placeOrderStripe = async (req, res) => {
                     quantity: 1,
                 },
             ],
-            success_url: `${req.headers.origin || "http://localhost:5173"}/payment/success`,
-            cancel_url: `${req.headers.origin || "http://localhost:5173"}/payment/cancel`,
+            success_url: `${req.headers.origin || (process.env.CLIENT_URL ? process.env.CLIENT_URL.replace(/\/$/, '') : "https://payment-gateway-bice-theta.vercel.app")}/payment/success`,
+            cancel_url: `${req.headers.origin || (process.env.CLIENT_URL ? process.env.CLIENT_URL.replace(/\/$/, '') : "https://payment-gateway-bice-theta.vercel.app")}/payment/cancel`,
             metadata: {
                 userId: numericUserId.toString(),
                 userName: customerName,
